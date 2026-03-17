@@ -1,0 +1,2140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CCM/RPM Minute Tracker</title>
+<style>
+:root {
+  --bg-primary: #0b0e14;
+  --bg-secondary: #141822;
+  --bg-tertiary: #1c2230;
+  --bg-card: #1a1f2e;
+  --bg-hover: #242a3a;
+  --bg-input: #111520;
+  --border: #2a3040;
+  --border-light: #353d50;
+  --text-primary: #e8ecf4;
+  --text-secondary: #9ba3b8;
+  --text-muted: #6b7388;
+  --accent: #00bcd4;
+  --accent-hover: #00d4ef;
+  --accent-dim: rgba(0,188,212,0.15);
+  --teal: #00bcd4;
+  --teal-bg: rgba(0,188,212,0.1);
+  --green: #22c55e;
+  --green-bg: rgba(34,197,94,0.12);
+  --yellow: #eab308;
+  --yellow-bg: rgba(234,179,8,0.12);
+  --orange: #f97316;
+  --orange-bg: rgba(249,115,22,0.12);
+  --red: #ef4444;
+  --red-bg: rgba(239,68,68,0.12);
+  --blue: #3b82f6;
+  --blue-bg: rgba(59,130,246,0.12);
+  --gold: #f59e0b;
+  --gold-bg: rgba(245,158,11,0.15);
+  --radius: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --shadow: 0 2px 12px rgba(0,0,0,0.4);
+  --shadow-lg: 0 4px 24px rgba(0,0,0,0.5);
+  --transition: 150ms ease;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.5;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+.app { display: flex; flex-direction: column; min-height: 100vh; }
+
+/* Header */
+header {
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+  padding: 10px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header-left { display: flex; align-items: center; gap: 16px; }
+.header-left h1 { font-size: 18px; font-weight: 700; color: var(--accent); letter-spacing: -0.5px; }
+.header-left h1 span { color: var(--text-muted); font-weight: 400; font-size: 14px; margin-left: 8px; }
+
+.header-right { display: flex; align-items: center; gap: 12px; }
+
+/* Navigation */
+nav {
+  display: flex;
+  gap: 2px;
+  background: var(--bg-tertiary);
+  border-radius: var(--radius);
+  padding: 3px;
+}
+nav button {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all var(--transition);
+  white-space: nowrap;
+}
+nav button:hover { color: var(--text-primary); background: var(--bg-hover); }
+nav button.active { background: var(--accent); color: #fff; }
+
+/* Provider selector */
+.provider-select {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  padding: 6px 12px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  cursor: pointer;
+}
+.provider-select:focus { outline: none; border-color: var(--accent); }
+
+/* Month selector */
+.month-select {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  padding: 6px 12px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+/* Main content */
+main { flex: 1; padding: 20px 24px; max-width: 1400px; margin: 0 auto; width: 100%; }
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition);
+  white-space: nowrap;
+}
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: var(--accent-hover); }
+.btn-secondary { background: var(--bg-tertiary); color: var(--text-primary); border: 1px solid var(--border); }
+.btn-secondary:hover { background: var(--bg-hover); border-color: var(--border-light); }
+.btn-success { background: var(--green); color: #fff; }
+.btn-success:hover { opacity: 0.9; }
+.btn-danger { background: var(--red); color: #fff; }
+.btn-danger:hover { opacity: 0.9; }
+.btn-sm { padding: 5px 10px; font-size: 12px; }
+.btn-lg { padding: 10px 20px; font-size: 14px; }
+
+/* Cards */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  margin-bottom: 16px;
+}
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.card-header h2 { font-size: 16px; font-weight: 600; }
+.card-header h3 { font-size: 14px; font-weight: 600; }
+
+/* Input */
+input[type="text"], input[type="search"], input[type="date"], input[type="number"], textarea, select {
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  padding: 8px 12px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-family: inherit;
+  transition: border-color var(--transition);
+  width: 100%;
+}
+input:focus, textarea:focus, select:focus { outline: none; border-color: var(--accent); }
+textarea { resize: vertical; min-height: 80px; }
+
+/* Table */
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { text-align: left; padding: 10px 12px; font-weight: 600; color: var(--text-secondary); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border); background: var(--bg-tertiary); }
+td { padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+tr:hover td { background: var(--bg-hover); }
+tr { cursor: pointer; transition: background var(--transition); }
+
+/* Status badges */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.badge-red { background: var(--red-bg); color: var(--red); }
+.badge-yellow { background: var(--yellow-bg); color: var(--yellow); }
+.badge-orange { background: var(--orange-bg); color: var(--orange); }
+.badge-green { background: var(--green-bg); color: var(--green); }
+.badge-blue { background: var(--blue-bg); color: var(--blue); }
+.badge-gold { background: var(--gold-bg); color: var(--gold); }
+.badge-teal { background: var(--teal-bg); color: var(--teal); }
+
+/* Grid */
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+
+/* Stat card */
+.stat-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px 20px;
+}
+.stat-card .stat-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 4px; }
+.stat-card .stat-value { font-size: 28px; font-weight: 700; line-height: 1.2; }
+.stat-card .stat-sub { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+
+/* Timer */
+.timer-bar {
+  background: var(--bg-secondary);
+  border-bottom: 2px solid var(--accent);
+  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 49px;
+  z-index: 99;
+}
+.timer-display {
+  font-size: 48px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+  letter-spacing: 2px;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+.timer-display.paused { color: var(--yellow); }
+.timer-display.stopped { color: var(--text-muted); }
+.timer-controls { display: flex; gap: 8px; align-items: center; }
+.timer-patient-name { font-size: 14px; color: var(--text-secondary); }
+
+/* Checkbox grid */
+.checkbox-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 8px;
+}
+.checkbox-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all var(--transition);
+  user-select: none;
+}
+.checkbox-item:hover { background: var(--bg-hover); border-color: var(--border-light); }
+.checkbox-item.checked { background: var(--accent-dim); border-color: var(--accent); }
+.checkbox-item input[type="checkbox"] {
+  width: 22px;
+  height: 22px;
+  accent-color: var(--accent);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.checkbox-item label {
+  font-size: 13px;
+  cursor: pointer;
+  line-height: 1.3;
+}
+
+/* Tabs */
+.tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 20px;
+}
+.tab-btn {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  padding: 10px 20px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all var(--transition);
+  margin-bottom: -1px;
+}
+.tab-btn:hover { color: var(--text-primary); }
+.tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+/* Almost there panel */
+.almost-there-panel {
+  background: linear-gradient(135deg, rgba(249,115,22,0.08), rgba(245,158,11,0.08));
+  border: 1px solid rgba(249,115,22,0.3);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  margin-bottom: 16px;
+}
+.almost-there-panel h3 {
+  color: var(--orange);
+  font-size: 16px;
+  margin-bottom: 4px;
+}
+.almost-there-panel .subtitle {
+  color: var(--text-secondary);
+  font-size: 12px;
+  margin-bottom: 12px;
+}
+.almost-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: rgba(0,0,0,0.2);
+  border-radius: var(--radius);
+  margin-bottom: 6px;
+  cursor: pointer;
+  transition: background var(--transition);
+}
+.almost-item:hover { background: rgba(0,0,0,0.35); }
+.almost-item .patient-info { display: flex; align-items: center; gap: 12px; }
+.almost-item .patient-name { font-weight: 600; font-size: 14px; }
+.almost-item .patient-mins { color: var(--text-secondary); font-size: 12px; }
+.almost-item .mins-needed {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--orange);
+  white-space: nowrap;
+}
+
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 20px;
+}
+.modal {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  width: 100%;
+  max-width: 700px;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 24px;
+  box-shadow: var(--shadow-lg);
+}
+.modal h2 { font-size: 18px; margin-bottom: 16px; }
+.modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; }
+
+/* Form rows */
+.form-row { margin-bottom: 14px; }
+.form-row label { display: block; font-size: 12px; color: var(--text-secondary); margin-bottom: 4px; font-weight: 500; }
+.form-row-inline { display: flex; gap: 12px; }
+.form-row-inline > div { flex: 1; }
+
+/* Progress bar */
+.progress-bar {
+  height: 8px;
+  background: var(--bg-tertiary);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 6px;
+}
+.progress-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+/* Search bar */
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.search-bar input { max-width: 300px; }
+
+/* Filters */
+.filters {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.filters select { width: auto; min-width: 140px; }
+
+/* Patient chart header */
+.patient-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+.patient-header h2 { font-size: 22px; font-weight: 700; }
+.patient-meta { display: flex; gap: 16px; margin-top: 4px; flex-wrap: wrap; }
+.patient-meta span { font-size: 12px; color: var(--text-secondary); }
+
+/* Time log entry */
+.time-entry {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px;
+  margin-bottom: 8px;
+}
+.time-entry-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.time-entry-header .duration { font-size: 18px; font-weight: 700; color: var(--accent); }
+.time-entry-header .date { font-size: 12px; color: var(--text-secondary); }
+.time-entry-activities { display: flex; flex-wrap: wrap; gap: 6px; }
+.time-entry-activities .activity-tag {
+  background: var(--accent-dim);
+  color: var(--accent);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+}
+.time-entry-notes { margin-top: 8px; font-size: 12px; color: var(--text-secondary); font-style: italic; }
+.time-entry-provider { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+
+/* Back button */
+.back-btn {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 4px 0;
+  margin-bottom: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.back-btn:hover { color: var(--text-primary); }
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .grid-4 { grid-template-columns: repeat(2, 1fr); }
+  .grid-3 { grid-template-columns: repeat(2, 1fr); }
+  .timer-display { font-size: 36px; }
+}
+@media (max-width: 768px) {
+  .grid-4, .grid-3, .grid-2 { grid-template-columns: 1fr; }
+  header { flex-wrap: wrap; gap: 8px; padding: 8px 16px; }
+  main { padding: 16px; }
+  .timer-bar { flex-wrap: wrap; gap: 8px; padding: 8px 16px; }
+  .timer-display { font-size: 32px; }
+  .checkbox-grid { grid-template-columns: 1fr; }
+  nav { overflow-x: auto; }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: var(--bg-primary); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--border-light); }
+
+/* Animations */
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+.pulse { animation: pulse 1.5s ease-in-out infinite; }
+
+/* Hide views */
+.view { display: none; }
+.view.active { display: block; }
+
+/* CSV drop zone */
+.drop-zone {
+  border: 2px dashed var(--border);
+  border-radius: var(--radius-lg);
+  padding: 40px;
+  text-align: center;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition);
+}
+.drop-zone:hover, .drop-zone.dragover { border-color: var(--accent); background: var(--accent-dim); }
+
+/* Revenue row */
+.revenue-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  font-size: 13px;
+  border-bottom: 1px solid var(--border);
+}
+.revenue-row:last-child { border: none; }
+.revenue-row .code { color: var(--text-secondary); }
+.revenue-row .count { font-weight: 600; }
+.revenue-row .amount { color: var(--green); font-weight: 600; }
+
+/* Tier distribution bar */
+.tier-bar { display: flex; height: 32px; border-radius: var(--radius); overflow: hidden; margin: 12px 0; }
+.tier-segment { transition: width 0.3s ease; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: #fff; min-width: 0; }
+
+/* Settings area */
+.settings-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; }
+.settings-item { padding: 10px; background: var(--bg-tertiary); border-radius: var(--radius); }
+.settings-item .setting-label { font-size: 11px; color: var(--text-muted); }
+.settings-item .setting-value { font-size: 14px; font-weight: 600; }
+
+/* Delete button */
+.delete-entry {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 16px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: all var(--transition);
+}
+.delete-entry:hover { color: var(--red); background: var(--red-bg); }
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <!-- Header -->
+  <header>
+    <div class="header-left">
+      <h1>CCM/RPM Tracker <span>HMS</span></h1>
+      <nav id="mainNav">
+        <button class="active" data-view="dashboard">Dashboard</button>
+        <button data-view="patients">Patients</button>
+        <button data-view="providers">Providers</button>
+        <button data-view="settings">Settings</button>
+      </nav>
+    </div>
+    <div class="header-right">
+      <select class="month-select" id="monthSelect"></select>
+      <select class="provider-select" id="activeProvider">
+        <option value="">All Providers</option>
+      </select>
+      <button class="btn btn-primary btn-sm" onclick="showAddPatient()">+ Patient</button>
+      <button class="btn btn-secondary btn-sm" onclick="exportCSV()">Export</button>
+      <button class="btn btn-secondary btn-sm" onclick="showImportModal()">Import</button>
+    </div>
+  </header>
+
+  <!-- Timer Bar (shown when patient is open and timer active) -->
+  <div class="timer-bar" id="timerBar" style="display:none;">
+    <div>
+      <div class="timer-display" id="timerDisplay">00:00:00</div>
+      <div class="timer-patient-name" id="timerPatientName"></div>
+    </div>
+    <div class="timer-controls">
+      <button class="btn btn-success btn-sm" id="timerStartBtn" onclick="startTimer()">&#9654; Start</button>
+      <button class="btn btn-secondary btn-sm" id="timerPauseBtn" onclick="pauseTimer()" style="display:none;">&#10074;&#10074; Pause</button>
+      <button class="btn btn-secondary btn-sm" id="timerResumeBtn" onclick="resumeTimer()" style="display:none;">&#9654; Resume</button>
+      <button class="btn btn-danger btn-sm" id="timerStopBtn" onclick="stopTimer()">&#9632; Stop &amp; Save</button>
+    </div>
+  </div>
+
+  <main>
+    <!-- Dashboard View -->
+    <div class="view active" id="dashboardView">
+      <div class="grid-4" id="dashStats"></div>
+
+      <div style="margin-top:16px;" class="grid-2">
+        <div>
+          <!-- Almost There Panel -->
+          <div class="almost-there-panel" id="almostTherePanel">
+            <h3>&#x1F525; ALMOST THERE — Push These Patients!</h3>
+            <div class="subtitle">Patients needing 5 or fewer minutes to hit the next billing code</div>
+            <div id="almostThereList"></div>
+          </div>
+
+          <!-- Tier distribution -->
+          <div class="card">
+            <div class="card-header"><h3>Patient Distribution by Status</h3></div>
+            <div class="tier-bar" id="tierBar"></div>
+            <div id="tierLegend" style="display:flex;flex-wrap:wrap;gap:12px;font-size:12px;"></div>
+          </div>
+        </div>
+
+        <div>
+          <!-- Revenue Projection -->
+          <div class="card">
+            <div class="card-header"><h3>Revenue Projection</h3></div>
+            <div id="revenueBreakdown"></div>
+            <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);display:flex;justify-content:space-between;font-size:16px;">
+              <span style="font-weight:600;">Estimated Total</span>
+              <span style="font-weight:700;color:var(--green);" id="totalRevenue">$0</span>
+            </div>
+          </div>
+
+          <!-- Quick Stats -->
+          <div class="card">
+            <div class="card-header"><h3>Quick Stats</h3></div>
+            <div id="quickStats"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Patients View -->
+    <div class="view" id="patientsView">
+      <div class="search-bar">
+        <input type="search" id="patientSearch" placeholder="Search patients by name, provider, location..." oninput="renderPatientList()">
+        <div class="filters">
+          <select id="filterProgram" onchange="renderPatientList()">
+            <option value="">All Programs</option>
+            <option value="CCM">CCM</option>
+            <option value="RPM">RPM</option>
+            <option value="Both">Both</option>
+          </select>
+          <select id="filterStatus" onchange="renderPatientList()">
+            <option value="">All Statuses</option>
+            <option value="red">Red (0-9 min)</option>
+            <option value="yellow">Yellow (10-14 min)</option>
+            <option value="orange">Orange (15-19 min)</option>
+            <option value="green">Green (20+ min)</option>
+            <option value="blue">Blue (35-39 min)</option>
+            <option value="gold">Gold (40+ min)</option>
+          </select>
+          <select id="filterProvider" onchange="renderPatientList()">
+            <option value="">All Providers</option>
+          </select>
+          <select id="filterLocation" onchange="renderPatientList()">
+            <option value="">All Locations</option>
+          </select>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="cursor:pointer" onclick="sortPatients('name')">Name &#8597;</th>
+              <th>DOB</th>
+              <th>Program</th>
+              <th style="cursor:pointer" onclick="sortPatients('provider')">Provider &#8597;</th>
+              <th style="cursor:pointer" onclick="sortPatients('location')">Location &#8597;</th>
+              <th style="cursor:pointer" onclick="sortPatients('minutes')">Minutes &#8597;</th>
+              <th>Status</th>
+              <th>Next Threshold</th>
+              <th>Mins Needed</th>
+            </tr>
+          </thead>
+          <tbody id="patientTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Patient Chart View -->
+    <div class="view" id="patientChartView">
+      <button class="back-btn" onclick="closePatientChart()">&#8592; Back to Patients</button>
+      <div id="patientChartContent"></div>
+    </div>
+
+    <!-- Providers View -->
+    <div class="view" id="providersView">
+      <div class="card">
+        <div class="card-header">
+          <h2>Provider Performance</h2>
+          <button class="btn btn-primary btn-sm" onclick="showAddProvider()">+ Add Provider</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Provider</th>
+                <th>Patients</th>
+                <th>Total Minutes Logged</th>
+                <th>Billable Patients</th>
+                <th>Entries This Month</th>
+                <th>Avg Min/Patient</th>
+              </tr>
+            </thead>
+            <tbody id="providerTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings View -->
+    <div class="view" id="settingsView">
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header"><h2>Manage Providers</h2></div>
+          <div id="providerList"></div>
+          <div style="margin-top:12px;display:flex;gap:8px;">
+            <input type="text" id="newProviderName" placeholder="Provider name">
+            <button class="btn btn-primary btn-sm" onclick="addProvider()">Add</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><h2>Manage Locations</h2></div>
+          <div id="locationList"></div>
+          <div style="margin-top:12px;display:flex;gap:8px;">
+            <input type="text" id="newLocationName" placeholder="Location name">
+            <button class="btn btn-primary btn-sm" onclick="addLocation()">Add</button>
+          </div>
+        </div>
+      </div>
+      <div class="card" style="margin-top:16px;">
+        <div class="card-header"><h2>Import Patients from CSV</h2></div>
+        <p style="font-size:13px;color:var(--text-secondary);margin-bottom:12px;">CSV columns: name, dob, diagnoses, insurance, provider, location, program (CCM/RPM/Both)</p>
+        <div class="drop-zone" id="csvDropZone" onclick="document.getElementById('csvFile').click()" ondragover="event.preventDefault();this.classList.add('dragover')" ondragleave="this.classList.remove('dragover')" ondrop="handleCSVDrop(event)">
+          Drop CSV file here or click to browse
+        </div>
+        <input type="file" id="csvFile" accept=".csv" style="display:none" onchange="handleCSVFile(this.files[0])">
+      </div>
+      <div class="card" style="margin-top:16px;">
+        <div class="card-header">
+          <h2>Data Management</h2>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn btn-secondary" onclick="exportAllData()">Export All Data (JSON)</button>
+          <button class="btn btn-secondary" onclick="document.getElementById('jsonImport').click()">Import Data (JSON)</button>
+          <input type="file" id="jsonImport" accept=".json" style="display:none" onchange="importAllData(this.files[0])">
+          <button class="btn btn-danger" onclick="if(confirm('Delete ALL data? This cannot be undone.')){localStorage.clear();location.reload();}">Reset All Data</button>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Modal container -->
+<div id="modalContainer"></div>
+
+<script>
+// ==================== DATA LAYER ====================
+const STORE_KEY = 'ccm_rpm_tracker';
+
+const CCM_ACTIVITIES = [
+  'Reviewed medical records/chart',
+  'Updated care plan',
+  'Medication reconciliation',
+  'Coordinated with specialist',
+  'Coordinated with pharmacy',
+  'Coordinated with home health',
+  'Patient/caregiver education',
+  'Phone call with patient',
+  'Phone call with caregiver/family',
+  'Symptom monitoring/assessment',
+  'Lab/test result review',
+  'Referral management',
+  'Insurance/prior auth coordination',
+  'Scheduled follow-up appointment',
+  'Transitional care coordination'
+];
+
+const RPM_ACTIVITIES = [
+  'Reviewed device readings',
+  'Contacted patient about abnormal readings',
+  'Adjusted care plan based on readings',
+  'Device troubleshooting',
+  'Educated patient on device use',
+  'Documented vital trends',
+  'Escalated to provider'
+];
+
+const BILLING_CODES = {
+  '99490': { label: 'CCM First 20 min (non-complex)', rate: 42, minMinutes: 20, type: 'CCM' },
+  '99439': { label: 'CCM Each addl 20 min', rate: 37, minMinutes: 20, type: 'CCM' },
+  '99491': { label: 'CCM First 30 min (complex)', rate: 74, minMinutes: 30, type: 'CCM' },
+  '99487': { label: 'CCM Each addl 30 min', rate: 67, minMinutes: 30, type: 'CCM' },
+  '99457': { label: 'RPM First 20 min interactive', rate: 51, minMinutes: 20, type: 'RPM' },
+  '99458': { label: 'RPM Each addl 20 min', rate: 42, minMinutes: 20, type: 'RPM' },
+  '99453': { label: 'RPM Device setup', rate: 19, minMinutes: 0, type: 'RPM' },
+  '99454': { label: 'RPM Device supply (16+ days)', rate: 55, minMinutes: 0, type: 'RPM' },
+};
+
+function getDefaultData() {
+  return {
+    patients: [],
+    providers: ['Dr. Smith', 'Dr. Johnson', 'Sarah RN', 'Maria RN', 'Amy NP'],
+    locations: ['Main Clinic', 'West Office', 'East Office', 'Telehealth'],
+    timeEntries: [],
+    settings: {}
+  };
+}
+
+function loadData() {
+  try {
+    const raw = localStorage.getItem(STORE_KEY);
+    if (raw) {
+      const d = JSON.parse(raw);
+      // Ensure all keys exist
+      const def = getDefaultData();
+      for (const k of Object.keys(def)) {
+        if (!(k in d)) d[k] = def[k];
+      }
+      return d;
+    }
+  } catch(e) { console.error('Load error', e); }
+  return getDefaultData();
+}
+
+function saveData() {
+  localStorage.setItem(STORE_KEY, JSON.stringify(data));
+}
+
+let data = loadData();
+
+// ==================== TIMER STATE ====================
+let timerState = {
+  running: false,
+  paused: false,
+  startTime: null,
+  elapsed: 0, // ms
+  pausedAt: null,
+  patientId: null,
+  interval: null
+};
+
+// ==================== UTILITY ====================
+function genId() { return Date.now().toString(36) + Math.random().toString(36).substr(2, 6); }
+
+function getCurrentMonth() {
+  return document.getElementById('monthSelect').value;
+}
+
+function formatMinutes(mins) {
+  if (mins < 1) return '< 1 min';
+  return `${Math.round(mins)} min`;
+}
+
+function formatDuration(seconds) {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = Math.floor(seconds % 60);
+  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+
+function getPatientMinutes(patientId, month) {
+  return data.timeEntries
+    .filter(e => e.patientId === patientId && e.month === month)
+    .reduce((sum, e) => sum + (e.minutes || 0), 0);
+}
+
+function getPatientMinutesByProgram(patientId, month, program) {
+  return data.timeEntries
+    .filter(e => e.patientId === patientId && e.month === month && e.program === program)
+    .reduce((sum, e) => sum + (e.minutes || 0), 0);
+}
+
+function getStatusTier(minutes) {
+  if (minutes >= 40) return { tier: 'gold', label: '2+ Codes', color: 'gold', emoji: '⭐' };
+  if (minutes >= 35) return { tier: 'blue', label: 'Almost 2 Codes', color: 'blue', emoji: '🔵' };
+  if (minutes >= 20) return { tier: 'green', label: 'Billable', color: 'green', emoji: '🟢' };
+  if (minutes >= 15) return { tier: 'orange', label: 'PUSH!', color: 'orange', emoji: '🟠' };
+  if (minutes >= 10) return { tier: 'yellow', label: 'Getting There', color: 'yellow', emoji: '🟡' };
+  return { tier: 'red', label: 'Needs Work', color: 'red', emoji: '🔴' };
+}
+
+function getNextThreshold(minutes) {
+  const thresholds = [20, 40, 60, 80];
+  for (const t of thresholds) {
+    if (minutes < t) return t;
+  }
+  return thresholds[thresholds.length - 1] + 20;
+}
+
+function getMinutesNeeded(minutes) {
+  return Math.max(0, getNextThreshold(minutes) - minutes);
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ==================== MONTH SELECTOR ====================
+function initMonthSelector() {
+  const sel = document.getElementById('monthSelect');
+  const now = new Date();
+  sel.innerHTML = '';
+  for (let i = -2; i <= 2; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+    const val = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    const label = d.toLocaleString('default', { month: 'long', year: 'numeric' });
+    const opt = document.createElement('option');
+    opt.value = val;
+    opt.textContent = label;
+    if (i === 0) opt.selected = true;
+    sel.appendChild(opt);
+  }
+  sel.addEventListener('change', () => renderCurrentView());
+}
+
+// ==================== PROVIDER / LOCATION SELECTORS ====================
+function refreshProviderSelectors() {
+  const selectors = [document.getElementById('activeProvider'), document.getElementById('filterProvider')];
+  for (const sel of selectors) {
+    if (!sel) continue;
+    const val = sel.value;
+    const firstOpt = sel.querySelector('option');
+    sel.innerHTML = '';
+    sel.appendChild(firstOpt);
+    data.providers.forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p;
+      opt.textContent = p;
+      sel.appendChild(opt);
+    });
+    sel.value = val;
+  }
+  const locSel = document.getElementById('filterLocation');
+  if (locSel) {
+    const val = locSel.value;
+    const firstOpt = locSel.querySelector('option');
+    locSel.innerHTML = '';
+    locSel.appendChild(firstOpt);
+    data.locations.forEach(l => {
+      const opt = document.createElement('option');
+      opt.value = l;
+      opt.textContent = l;
+      locSel.appendChild(opt);
+    });
+    locSel.value = val;
+  }
+}
+
+// ==================== NAVIGATION ====================
+let currentView = 'dashboard';
+let currentPatientId = null;
+let patientSortField = 'name';
+let patientSortAsc = true;
+
+document.getElementById('mainNav').addEventListener('click', (e) => {
+  if (e.target.tagName !== 'BUTTON') return;
+  const view = e.target.dataset.view;
+  if (!view) return;
+  switchView(view);
+});
+
+function switchView(view) {
+  currentView = view;
+  document.querySelectorAll('#mainNav button').forEach(b => b.classList.toggle('active', b.dataset.view === view));
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+
+  if (view === 'dashboard') document.getElementById('dashboardView').classList.add('active');
+  else if (view === 'patients') document.getElementById('patientsView').classList.add('active');
+  else if (view === 'patientChart') document.getElementById('patientChartView').classList.add('active');
+  else if (view === 'providers') document.getElementById('providersView').classList.add('active');
+  else if (view === 'settings') document.getElementById('settingsView').classList.add('active');
+
+  renderCurrentView();
+}
+
+function renderCurrentView() {
+  if (currentView === 'dashboard') renderDashboard();
+  else if (currentView === 'patients') renderPatientList();
+  else if (currentView === 'patientChart') renderPatientChart(currentPatientId);
+  else if (currentView === 'providers') renderProviders();
+  else if (currentView === 'settings') renderSettings();
+}
+
+// ==================== DASHBOARD ====================
+function renderDashboard() {
+  const month = getCurrentMonth();
+  const activeProvider = document.getElementById('activeProvider').value;
+
+  let patients = data.patients;
+  if (activeProvider) patients = patients.filter(p => p.provider === activeProvider);
+
+  const total = patients.length;
+  let billable = 0, zeroMin = 0, totalMinutes = 0;
+  const tierCounts = { red: 0, yellow: 0, orange: 0, green: 0, blue: 0, gold: 0 };
+  const almostThere = [];
+
+  patients.forEach(p => {
+    const mins = getPatientMinutes(p.id, month);
+    const tier = getStatusTier(mins);
+    tierCounts[tier.tier]++;
+    totalMinutes += mins;
+    if (mins >= 20) billable++;
+    if (mins === 0) zeroMin++;
+
+    const needed = getMinutesNeeded(mins);
+    if (needed > 0 && needed <= 5) {
+      almostThere.push({ patient: p, minutes: mins, needed, threshold: getNextThreshold(mins) });
+    }
+  });
+
+  almostThere.sort((a, b) => a.needed - b.needed);
+
+  // Stats
+  document.getElementById('dashStats').innerHTML = `
+    <div class="stat-card">
+      <div class="stat-label">Total Patients</div>
+      <div class="stat-value">${total}</div>
+      <div class="stat-sub">${activeProvider || 'All providers'}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Billable (20+ min)</div>
+      <div class="stat-value" style="color:var(--green)">${billable}</div>
+      <div class="stat-sub">${total > 0 ? Math.round(billable/total*100) : 0}% of patients</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Zero Minutes</div>
+      <div class="stat-value" style="color:var(--red)">${zeroMin}</div>
+      <div class="stat-sub">Need attention</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Almost There</div>
+      <div class="stat-value" style="color:var(--orange)">${almostThere.length}</div>
+      <div class="stat-sub">Within 5 min of next tier</div>
+    </div>
+  `;
+
+  // Almost there panel
+  const almostList = document.getElementById('almostThereList');
+  if (almostThere.length === 0) {
+    almostList.innerHTML = '<div style="padding:12px;color:var(--text-muted);font-size:13px;">No patients within 5 minutes of next threshold right now.</div>';
+  } else {
+    almostList.innerHTML = almostThere.map(a => `
+      <div class="almost-item" onclick="openPatientChart('${a.patient.id}')">
+        <div class="patient-info">
+          <span class="patient-name">${escapeHtml(a.patient.name)}</span>
+          <span class="patient-mins">${Math.round(a.minutes)} min logged &middot; ${a.patient.program}</span>
+        </div>
+        <div class="mins-needed">Need ${Math.ceil(a.needed)} min &rarr; ${a.threshold} min</div>
+      </div>
+    `).join('');
+  }
+
+  // Tier bar
+  const tierBar = document.getElementById('tierBar');
+  const tierColors = { red: 'var(--red)', yellow: 'var(--yellow)', orange: 'var(--orange)', green: 'var(--green)', blue: 'var(--blue)', gold: 'var(--gold)' };
+  const tierLabels = { red: '0-9', yellow: '10-14', orange: '15-19', green: '20+', blue: '35-39', gold: '40+' };
+  if (total > 0) {
+    tierBar.innerHTML = Object.entries(tierCounts).map(([t, c]) => {
+      const pct = (c / total * 100);
+      if (pct < 1) return '';
+      return `<div class="tier-segment" style="width:${pct}%;background:${tierColors[t]}">${c}</div>`;
+    }).join('');
+  } else {
+    tierBar.innerHTML = '<div class="tier-segment" style="width:100%;background:var(--bg-tertiary);color:var(--text-muted)">No patients</div>';
+  }
+
+  document.getElementById('tierLegend').innerHTML = Object.entries(tierCounts).map(([t, c]) =>
+    `<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${tierColors[t]};margin-right:4px;vertical-align:middle;"></span>${tierLabels[t]} min: ${c}</span>`
+  ).join('');
+
+  // Revenue
+  const revData = calculateRevenue(patients, month);
+  document.getElementById('revenueBreakdown').innerHTML = revData.breakdown.map(r =>
+    `<div class="revenue-row"><span class="code">${r.code} — ${r.label}</span><span class="count">${r.count} pts</span><span class="amount">$${r.amount.toLocaleString()}</span></div>`
+  ).join('');
+  document.getElementById('totalRevenue').textContent = '$' + revData.total.toLocaleString();
+
+  // Quick stats
+  document.getElementById('quickStats').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+      <div class="settings-item"><div class="setting-label">Total Minutes Logged</div><div class="setting-value">${Math.round(totalMinutes)}</div></div>
+      <div class="settings-item"><div class="setting-label">Avg Min/Patient</div><div class="setting-value">${total > 0 ? (totalMinutes/total).toFixed(1) : 0}</div></div>
+      <div class="settings-item"><div class="setting-label">Time Entries</div><div class="setting-value">${data.timeEntries.filter(e => e.month === month).length}</div></div>
+      <div class="settings-item"><div class="setting-label">Orange Zone (PUSH!)</div><div class="setting-value" style="color:var(--orange)">${tierCounts.orange}</div></div>
+    </div>
+  `;
+}
+
+function calculateRevenue(patients, month) {
+  const breakdown = [];
+  let total = 0;
+
+  // CCM 99490 - first 20 min non-complex
+  let ccmBasic = 0, ccmAddl = 0, ccmComplex = 0, ccmComplexAddl = 0;
+  let rpmBasic = 0, rpmAddl = 0;
+
+  patients.forEach(p => {
+    const mins = getPatientMinutes(p.id, month);
+    if (p.program === 'CCM' || p.program === 'Both') {
+      const ccmMins = p.program === 'Both' ? getPatientMinutesByProgram(p.id, month, 'CCM') || mins * 0.6 : mins;
+      if (p.complex) {
+        if (ccmMins >= 30) { ccmComplex++; }
+        if (ccmMins >= 60) { ccmComplexAddl++; }
+      } else {
+        if (ccmMins >= 20) { ccmBasic++; }
+        if (ccmMins >= 40) { ccmAddl++; }
+        if (ccmMins >= 60) { ccmAddl++; }
+      }
+    }
+    if (p.program === 'RPM' || p.program === 'Both') {
+      const rpmMins = p.program === 'Both' ? getPatientMinutesByProgram(p.id, month, 'RPM') || mins * 0.4 : mins;
+      if (rpmMins >= 20) { rpmBasic++; }
+      if (rpmMins >= 40) { rpmAddl++; }
+    }
+  });
+
+  breakdown.push({ code: '99490', label: 'CCM 20 min', count: ccmBasic, amount: ccmBasic * 42 });
+  breakdown.push({ code: '99439', label: 'CCM addl 20', count: ccmAddl, amount: ccmAddl * 37 });
+  breakdown.push({ code: '99491', label: 'CCM complex 30', count: ccmComplex, amount: ccmComplex * 74 });
+  breakdown.push({ code: '99487', label: 'CCM complex addl', count: ccmComplexAddl, amount: ccmComplexAddl * 67 });
+  breakdown.push({ code: '99457', label: 'RPM 20 min', count: rpmBasic, amount: rpmBasic * 51 });
+  breakdown.push({ code: '99458', label: 'RPM addl 20', count: rpmAddl, amount: rpmAddl * 42 });
+
+  total = breakdown.reduce((s, r) => s + r.amount, 0);
+  return { breakdown, total };
+}
+
+// ==================== PATIENT LIST ====================
+function sortPatients(field) {
+  if (patientSortField === field) patientSortAsc = !patientSortAsc;
+  else { patientSortField = field; patientSortAsc = true; }
+  renderPatientList();
+}
+
+function renderPatientList() {
+  const month = getCurrentMonth();
+  const search = (document.getElementById('patientSearch').value || '').toLowerCase();
+  const filterProgram = document.getElementById('filterProgram').value;
+  const filterStatus = document.getElementById('filterStatus').value;
+  const filterProvider = document.getElementById('filterProvider').value;
+  const filterLocation = document.getElementById('filterLocation').value;
+
+  let patients = data.patients.filter(p => {
+    if (search && !p.name.toLowerCase().includes(search) && !(p.provider||'').toLowerCase().includes(search) && !(p.location||'').toLowerCase().includes(search)) return false;
+    if (filterProgram && p.program !== filterProgram) return false;
+    if (filterProvider && p.provider !== filterProvider) return false;
+    if (filterLocation && p.location !== filterLocation) return false;
+    if (filterStatus) {
+      const mins = getPatientMinutes(p.id, month);
+      if (getStatusTier(mins).tier !== filterStatus) return false;
+    }
+    return true;
+  });
+
+  // Sort
+  patients.sort((a, b) => {
+    let va, vb;
+    if (patientSortField === 'minutes') {
+      va = getPatientMinutes(a.id, month);
+      vb = getPatientMinutes(b.id, month);
+    } else {
+      va = (a[patientSortField] || '').toLowerCase();
+      vb = (b[patientSortField] || '').toLowerCase();
+    }
+    if (va < vb) return patientSortAsc ? -1 : 1;
+    if (va > vb) return patientSortAsc ? 1 : -1;
+    return 0;
+  });
+
+  const tbody = document.getElementById('patientTableBody');
+  tbody.innerHTML = patients.map(p => {
+    const mins = getPatientMinutes(p.id, month);
+    const tier = getStatusTier(mins);
+    const next = getNextThreshold(mins);
+    const needed = getMinutesNeeded(mins);
+    return `<tr onclick="openPatientChart('${p.id}')">
+      <td style="font-weight:600;">${escapeHtml(p.name)}</td>
+      <td>${escapeHtml(p.dob || '')}</td>
+      <td><span class="badge badge-teal">${p.program}</span></td>
+      <td>${escapeHtml(p.provider || '')}</td>
+      <td>${escapeHtml(p.location || '')}</td>
+      <td style="font-weight:600;">${Math.round(mins)}</td>
+      <td><span class="badge badge-${tier.color}">${tier.emoji} ${tier.label}</span></td>
+      <td>${next} min</td>
+      <td style="font-weight:600;color:${needed <= 5 ? 'var(--orange)' : 'var(--text-secondary)'}">${needed > 0 ? Math.ceil(needed) + ' min' : '—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ==================== PATIENT CHART ====================
+function openPatientChart(patientId) {
+  currentPatientId = patientId;
+  // Update nav to show chart
+  document.querySelectorAll('#mainNav button').forEach(b => b.classList.remove('active'));
+  switchView('patientChart');
+  // Auto-start timer
+  if (!timerState.running || timerState.patientId !== patientId) {
+    initTimerForPatient(patientId);
+  }
+}
+
+function closePatientChart() {
+  // Don't stop timer - it persists
+  currentPatientId = null;
+  switchView('patients');
+}
+
+let chartTab = 'overview';
+
+function renderPatientChart(patientId) {
+  if (!patientId) return;
+  const p = data.patients.find(x => x.id === patientId);
+  if (!p) return;
+
+  const month = getCurrentMonth();
+  const mins = getPatientMinutes(p.id, month);
+  const tier = getStatusTier(mins);
+  const next = getNextThreshold(mins);
+  const needed = getMinutesNeeded(mins);
+  const entries = data.timeEntries.filter(e => e.patientId === p.id && e.month === month);
+  const allEntries = data.timeEntries.filter(e => e.patientId === p.id);
+
+  const progressPct = Math.min(100, (mins / next) * 100);
+
+  const container = document.getElementById('patientChartContent');
+  container.innerHTML = `
+    <div class="patient-header">
+      <div>
+        <h2>${escapeHtml(p.name)}</h2>
+        <div class="patient-meta">
+          <span>DOB: ${escapeHtml(p.dob || 'N/A')}</span>
+          <span>Program: <strong>${p.program}</strong></span>
+          <span>Provider: ${escapeHtml(p.provider || 'N/A')}</span>
+          <span>Location: ${escapeHtml(p.location || 'N/A')}</span>
+          <span>Insurance: ${escapeHtml(p.insurance || 'N/A')}</span>
+          ${p.complex ? '<span class="badge badge-gold">Complex</span>' : ''}
+        </div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:36px;font-weight:700;color:${tier.color === 'gold' ? 'var(--gold)' : 'var(--'+tier.color+')'}">${Math.round(mins)} min</div>
+        <span class="badge badge-${tier.color}">${tier.emoji} ${tier.label}</span>
+        <div style="font-size:12px;color:var(--text-secondary);margin-top:4px;">${needed > 0 ? `${Math.ceil(needed)} min to ${next} min` : 'Threshold met!'}</div>
+        <div class="progress-bar" style="width:200px;margin-top:6px;">
+          <div class="progress-fill" style="width:${progressPct}%;background:${tier.color === 'gold' ? 'var(--gold)' : 'var(--'+tier.color+')'}"></div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-bottom:16px;">
+      <button class="btn btn-primary" onclick="showLogTimeModal('${p.id}')">+ Log Time Manually</button>
+      <button class="btn btn-secondary" onclick="showEditPatient('${p.id}')">Edit Patient</button>
+      <button class="btn btn-danger btn-sm" onclick="deletePatient('${p.id}')" style="margin-left:auto;">Delete Patient</button>
+    </div>
+
+    <div class="tabs" id="chartTabs">
+      <button class="tab-btn ${chartTab === 'overview' ? 'active' : ''}" onclick="chartTab='overview';renderPatientChart('${p.id}')">Overview</button>
+      <button class="tab-btn ${chartTab === 'timelog' ? 'active' : ''}" onclick="chartTab='timelog';renderPatientChart('${p.id}')">Time Log (${entries.length})</button>
+      <button class="tab-btn ${chartTab === 'careplan' ? 'active' : ''}" onclick="chartTab='careplan';renderPatientChart('${p.id}')">Care Plan</button>
+      <button class="tab-btn ${chartTab === 'readings' ? 'active' : ''}" onclick="chartTab='readings';renderPatientChart('${p.id}')">Readings</button>
+    </div>
+
+    <div id="chartTabContent"></div>
+  `;
+
+  const tabContent = document.getElementById('chartTabContent');
+
+  if (chartTab === 'overview') {
+    tabContent.innerHTML = `
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header"><h3>Patient Information</h3></div>
+          <div style="font-size:13px;">
+            <div style="display:grid;grid-template-columns:120px 1fr;gap:8px;">
+              <span style="color:var(--text-muted)">Name:</span><span>${escapeHtml(p.name)}</span>
+              <span style="color:var(--text-muted)">DOB:</span><span>${escapeHtml(p.dob || 'N/A')}</span>
+              <span style="color:var(--text-muted)">Program:</span><span>${p.program}${p.complex ? ' (Complex)' : ''}</span>
+              <span style="color:var(--text-muted)">Provider:</span><span>${escapeHtml(p.provider || 'N/A')}</span>
+              <span style="color:var(--text-muted)">Location:</span><span>${escapeHtml(p.location || 'N/A')}</span>
+              <span style="color:var(--text-muted)">Insurance:</span><span>${escapeHtml(p.insurance || 'N/A')}</span>
+              <span style="color:var(--text-muted)">Diagnoses:</span><span>${escapeHtml(p.diagnoses || 'N/A')}</span>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><h3>Billing Status</h3></div>
+          <div style="font-size:13px;">
+            <div style="margin-bottom:12px;">
+              <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+                <span>Progress to ${next} min</span>
+                <span style="font-weight:600;">${Math.round(mins)}/${next}</span>
+              </div>
+              <div class="progress-bar" style="height:12px;">
+                <div class="progress-fill" style="width:${progressPct}%;background:${tier.color === 'gold' ? 'var(--gold)' : 'var(--'+tier.color+')'}"></div>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+              <div class="settings-item"><div class="setting-label">Status</div><div class="setting-value"><span class="badge badge-${tier.color}">${tier.emoji} ${tier.label}</span></div></div>
+              <div class="settings-item"><div class="setting-label">Minutes Needed</div><div class="setting-value" style="color:var(--orange)">${needed > 0 ? Math.ceil(needed) : 'Done!'}</div></div>
+              <div class="settings-item"><div class="setting-label">Entries This Month</div><div class="setting-value">${entries.length}</div></div>
+              <div class="settings-item"><div class="setting-label">Total Entries (All)</div><div class="setting-value">${allEntries.length}</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  } else if (chartTab === 'timelog') {
+    tabContent.innerHTML = `
+      <div class="card">
+        <div class="card-header">
+          <h3>Time Entries — ${getCurrentMonthLabel()}</h3>
+          <button class="btn btn-primary btn-sm" onclick="showLogTimeModal('${p.id}')">+ Log Time</button>
+        </div>
+        ${entries.length === 0 ? '<div style="padding:20px;text-align:center;color:var(--text-muted);">No time entries this month.</div>' :
+          entries.sort((a,b) => new Date(b.date) - new Date(a.date)).map(e => `
+            <div class="time-entry">
+              <div class="time-entry-header">
+                <div>
+                  <span class="duration">${e.minutes.toFixed(1)} min</span>
+                  <span class="badge badge-teal" style="margin-left:8px;">${e.program || p.program}</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <span class="date">${e.date}</span>
+                  <button class="delete-entry" onclick="event.stopPropagation();deleteTimeEntry('${e.id}','${p.id}')" title="Delete entry">&times;</button>
+                </div>
+              </div>
+              <div class="time-entry-activities">
+                ${(e.activities||[]).map(a => `<span class="activity-tag">${escapeHtml(a)}</span>`).join('')}
+              </div>
+              ${e.notes ? `<div class="time-entry-notes">${escapeHtml(e.notes)}</div>` : ''}
+              <div class="time-entry-provider">Logged by: ${escapeHtml(e.provider || 'Unknown')}</div>
+            </div>
+          `).join('')
+        }
+      </div>
+    `;
+  } else if (chartTab === 'careplan') {
+    tabContent.innerHTML = `
+      <div class="card">
+        <div class="card-header"><h3>Care Plan</h3></div>
+        <textarea id="carePlanText" style="min-height:300px;" placeholder="Enter care plan notes...">${escapeHtml(p.carePlan || '')}</textarea>
+        <div style="margin-top:8px;">
+          <button class="btn btn-primary btn-sm" onclick="saveCarePlan('${p.id}')">Save Care Plan</button>
+        </div>
+      </div>
+    `;
+  } else if (chartTab === 'readings') {
+    tabContent.innerHTML = `
+      <div class="card">
+        <div class="card-header"><h3>RPM Device Readings</h3></div>
+        ${p.program === 'RPM' || p.program === 'Both' ? `
+          <div style="padding:20px;text-align:center;color:var(--text-muted);">
+            <div style="font-size:48px;margin-bottom:12px;">📊</div>
+            <p>Device readings will sync here from your RPM devices.</p>
+            <p style="margin-top:8px;font-size:12px;">This panel shows blood pressure, glucose, weight, pulse ox, and other connected device data.</p>
+            <div style="margin-top:20px;display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
+              <div class="settings-item"><div class="setting-label">Blood Pressure</div><div class="setting-value">--/--</div></div>
+              <div class="settings-item"><div class="setting-label">Weight</div><div class="setting-value">-- lbs</div></div>
+              <div class="settings-item"><div class="setting-label">Glucose</div><div class="setting-value">-- mg/dL</div></div>
+              <div class="settings-item"><div class="setting-label">Pulse Ox</div><div class="setting-value">--%</div></div>
+              <div class="settings-item"><div class="setting-label">Heart Rate</div><div class="setting-value">-- bpm</div></div>
+              <div class="settings-item"><div class="setting-label">Days Transmitted</div><div class="setting-value">0/16</div></div>
+            </div>
+          </div>
+        ` : `
+          <div style="padding:20px;text-align:center;color:var(--text-muted);">
+            <p>This patient is not enrolled in RPM.</p>
+          </div>
+        `}
+      </div>
+    `;
+  }
+}
+
+function getCurrentMonthLabel() {
+  const val = getCurrentMonth();
+  const [y, m] = val.split('-');
+  return new Date(y, m - 1).toLocaleString('default', { month: 'long', year: 'numeric' });
+}
+
+function saveCarePlan(patientId) {
+  const p = data.patients.find(x => x.id === patientId);
+  if (!p) return;
+  p.carePlan = document.getElementById('carePlanText').value;
+  saveData();
+}
+
+function deleteTimeEntry(entryId, patientId) {
+  if (!confirm('Delete this time entry?')) return;
+  data.timeEntries = data.timeEntries.filter(e => e.id !== entryId);
+  saveData();
+  renderPatientChart(patientId);
+}
+
+function deletePatient(patientId) {
+  if (!confirm('Delete this patient and all their time entries? This cannot be undone.')) return;
+  data.patients = data.patients.filter(p => p.id !== patientId);
+  data.timeEntries = data.timeEntries.filter(e => e.patientId !== patientId);
+  saveData();
+  closePatientChart();
+}
+
+// ==================== TIMER ====================
+function initTimerForPatient(patientId) {
+  const p = data.patients.find(x => x.id === patientId);
+  if (!p) return;
+
+  // If timer is running for a different patient, prompt to save first
+  if (timerState.running && timerState.patientId !== patientId) {
+    if (confirm(`Timer is running for another patient. Stop and save that time first?`)) {
+      stopTimer();
+    } else {
+      return;
+    }
+  }
+
+  timerState.patientId = patientId;
+  timerState.elapsed = 0;
+  timerState.running = false;
+  timerState.paused = false;
+
+  const bar = document.getElementById('timerBar');
+  bar.style.display = 'flex';
+  document.getElementById('timerPatientName').textContent = p.name + ' — ' + p.program;
+  updateTimerDisplay();
+  showTimerButtons('start');
+
+  // Auto-start
+  startTimer();
+}
+
+function startTimer() {
+  timerState.running = true;
+  timerState.paused = false;
+  timerState.startTime = Date.now() - timerState.elapsed;
+  timerState.interval = setInterval(updateTimerTick, 100);
+  showTimerButtons('running');
+  document.getElementById('timerDisplay').classList.remove('paused', 'stopped');
+}
+
+function pauseTimer() {
+  timerState.paused = true;
+  timerState.running = true;
+  timerState.elapsed = Date.now() - timerState.startTime;
+  clearInterval(timerState.interval);
+  showTimerButtons('paused');
+  document.getElementById('timerDisplay').classList.add('paused');
+}
+
+function resumeTimer() {
+  timerState.paused = false;
+  timerState.startTime = Date.now() - timerState.elapsed;
+  timerState.interval = setInterval(updateTimerTick, 100);
+  showTimerButtons('running');
+  document.getElementById('timerDisplay').classList.remove('paused');
+}
+
+function stopTimer() {
+  clearInterval(timerState.interval);
+  timerState.elapsed = timerState.startTime ? Date.now() - timerState.startTime : 0;
+  timerState.running = false;
+  timerState.paused = false;
+  document.getElementById('timerDisplay').classList.add('stopped');
+  showTimerButtons('start');
+
+  const minutes = timerState.elapsed / 60000;
+  if (minutes >= 0.1) {
+    showSaveTimerModal(timerState.patientId, minutes);
+  }
+
+  timerState.elapsed = 0;
+  updateTimerDisplay();
+}
+
+function updateTimerTick() {
+  timerState.elapsed = Date.now() - timerState.startTime;
+  updateTimerDisplay();
+}
+
+function updateTimerDisplay() {
+  const secs = timerState.elapsed / 1000;
+  document.getElementById('timerDisplay').textContent = formatDuration(secs);
+}
+
+function showTimerButtons(state) {
+  document.getElementById('timerStartBtn').style.display = state === 'start' ? '' : 'none';
+  document.getElementById('timerPauseBtn').style.display = state === 'running' ? '' : 'none';
+  document.getElementById('timerResumeBtn').style.display = state === 'paused' ? '' : 'none';
+}
+
+// ==================== MODALS ====================
+function closeModal() {
+  document.getElementById('modalContainer').innerHTML = '';
+}
+
+function showSaveTimerModal(patientId, minutes) {
+  const p = data.patients.find(x => x.id === patientId);
+  if (!p) return;
+
+  const program = p.program === 'Both' ? 'CCM' : p.program;
+  const activities = program === 'RPM' ? RPM_ACTIVITIES : CCM_ACTIVITIES;
+  const rpmActivities = (p.program === 'Both' || p.program === 'RPM') ? RPM_ACTIVITIES : [];
+  const ccmActivities = (p.program === 'Both' || p.program === 'CCM') ? CCM_ACTIVITIES : [];
+
+  const allActivities = [];
+  if (ccmActivities.length > 0) allActivities.push({ group: 'CCM Activities', items: ccmActivities });
+  if (rpmActivities.length > 0) allActivities.push({ group: 'RPM Activities', items: rpmActivities });
+
+  const activeProvider = document.getElementById('activeProvider').value || (data.providers[0] || '');
+
+  document.getElementById('modalContainer').innerHTML = `
+    <div class="modal-overlay" onclick="if(event.target===this)closeModal()">
+      <div class="modal">
+        <h2>Save Time Entry — ${escapeHtml(p.name)}</h2>
+        <div style="font-size:28px;font-weight:700;color:var(--accent);margin-bottom:16px;">${minutes.toFixed(1)} minutes</div>
+
+        <div class="form-row-inline">
+          <div class="form-row">
+            <label>Date</label>
+            <input type="date" id="saveEntryDate" value="${new Date().toISOString().split('T')[0]}">
+          </div>
+          <div class="form-row">
+            <label>Program</label>
+            <select id="saveEntryProgram">
+              ${p.program === 'Both' ? '<option value="CCM">CCM</option><option value="RPM">RPM</option>' : `<option value="${p.program}">${p.program}</option>`}
+            </select>
+          </div>
+          <div class="form-row">
+            <label>Provider</label>
+            <select id="saveEntryProvider">
+              ${data.providers.map(pr => `<option value="${pr}" ${pr === activeProvider ? 'selected' : ''}>${pr}</option>`).join('')}
+            </select>
+          </div>
+          <div class="form-row">
+            <label>Minutes (adjust if needed)</label>
+            <input type="number" id="saveEntryMinutes" value="${minutes.toFixed(1)}" step="0.1" min="0">
+          </div>
+        </div>
+
+        <div style="margin-bottom:12px;">
+          <label style="font-size:13px;font-weight:600;display:block;margin-bottom:8px;">What was done? (check all that apply)</label>
+          ${allActivities.map(group => `
+            <div style="margin-bottom:8px;font-size:12px;color:var(--text-secondary);font-weight:600;">${group.group}</div>
+            <div class="checkbox-grid" style="margin-bottom:12px;">
+              ${group.items.map((a, i) => `
+                <div class="checkbox-item" onclick="this.classList.toggle('checked');this.querySelector('input').checked=!this.querySelector('input').checked;">
+                  <input type="checkbox" class="save-activity" value="${escapeHtml(a)}" onclick="event.stopPropagation();this.parentElement.classList.toggle('checked');">
+                  <label>${escapeHtml(a)}</label>
+                </div>
+              `).join('')}
+            </div>
+          `).join('')}
+        </div>
+
+        <div class="form-row">
+          <label>Notes (optional)</label>
+          <textarea id="saveEntryNotes" rows="2" placeholder="Any additional notes..."></textarea>
+        </div>
+
+        <div class="modal-actions">
+          <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+          <button class="btn btn-success btn-lg" onclick="saveTimerEntry('${p.id}')">Save Entry</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function saveTimerEntry(patientId) {
+  const date = document.getElementById('saveEntryDate').value;
+  const program = document.getElementById('saveEntryProgram').value;
+  const provider = document.getElementById('saveEntryProvider').value;
+  const minutes = parseFloat(document.getElementById('saveEntryMinutes').value) || 0;
+  const notes = document.getElementById('saveEntryNotes').value.trim();
+  const activities = Array.from(document.querySelectorAll('.save-activity:checked')).map(c => c.value);
+
+  if (minutes <= 0) { alert('Please enter valid minutes.'); return; }
+
+  const month = date.substring(0, 7);
+
+  data.timeEntries.push({
+    id: genId(),
+    patientId,
+    date,
+    month,
+    program,
+    provider,
+    minutes,
+    activities,
+    notes,
+    createdAt: new Date().toISOString()
+  });
+
+  saveData();
+  closeModal();
+  if (currentPatientId === patientId) renderPatientChart(patientId);
+  renderDashboard();
+}
+
+function showLogTimeModal(patientId) {
+  const p = data.patients.find(x => x.id === patientId);
+  if (!p) return;
+
+  const activeProvider = document.getElementById('activeProvider').value || (data.providers[0] || '');
+  const allActivities = [];
+  if (p.program === 'CCM' || p.program === 'Both') allActivities.push({ group: 'CCM Activities', items: CCM_ACTIVITIES });
+  if (p.program === 'RPM' || p.program === 'Both') allActivities.push({ group: 'RPM Activities', items: RPM_ACTIVITIES });
+
+  document.getElementById('modalContainer').innerHTML = `
+    <div class="modal-overlay" onclick="if(event.target===this)closeModal()">
+      <div class="modal">
+        <h2>Log Time — ${escapeHtml(p.name)}</h2>
+
+        <div class="form-row-inline">
+          <div class="form-row">
+            <label>Date</label>
+            <input type="date" id="logEntryDate" value="${new Date().toISOString().split('T')[0]}">
+          </div>
+          <div class="form-row">
+            <label>Minutes</label>
+            <input type="number" id="logEntryMinutes" value="" step="1" min="1" placeholder="Enter minutes">
+          </div>
+          <div class="form-row">
+            <label>Program</label>
+            <select id="logEntryProgram">
+              ${p.program === 'Both' ? '<option value="CCM">CCM</option><option value="RPM">RPM</option>' : `<option value="${p.program}">${p.program}</option>`}
+            </select>
+          </div>
+          <div class="form-row">
+            <label>Provider</label>
+            <select id="logEntryProvider">
+              ${data.providers.map(pr => `<option value="${pr}" ${pr === activeProvider ? 'selected' : ''}>${pr}</option>`).join('')}
+            </select>
+          </div>
+        </div>
+
+        <div style="margin-bottom:12px;">
+          <label style="font-size:13px;font-weight:600;display:block;margin-bottom:8px;">What was done?</label>
+          ${allActivities.map(group => `
+            <div style="margin-bottom:8px;font-size:12px;color:var(--text-secondary);font-weight:600;">${group.group}</div>
+            <div class="checkbox-grid" style="margin-bottom:12px;">
+              ${group.items.map(a => `
+                <div class="checkbox-item" onclick="this.classList.toggle('checked');this.querySelector('input').checked=!this.querySelector('input').checked;">
+                  <input type="checkbox" class="log-activity" value="${escapeHtml(a)}" onclick="event.stopPropagation();this.parentElement.classList.toggle('checked');">
+                  <label>${escapeHtml(a)}</label>
+                </div>
+              `).join('')}
+            </div>
+          `).join('')}
+        </div>
+
+        <div class="form-row">
+          <label>Notes (optional)</label>
+          <textarea id="logEntryNotes" rows="2" placeholder="Any additional notes..."></textarea>
+        </div>
+
+        <div class="modal-actions">
+          <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+          <button class="btn btn-success btn-lg" onclick="saveLogEntry('${p.id}')">Save Entry</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function saveLogEntry(patientId) {
+  const date = document.getElementById('logEntryDate').value;
+  const program = document.getElementById('logEntryProgram').value;
+  const provider = document.getElementById('logEntryProvider').value;
+  const minutes = parseFloat(document.getElementById('logEntryMinutes').value) || 0;
+  const notes = document.getElementById('logEntryNotes').value.trim();
+  const activities = Array.from(document.querySelectorAll('.log-activity:checked')).map(c => c.value);
+
+  if (minutes <= 0) { alert('Please enter valid minutes.'); return; }
+
+  const month = date.substring(0, 7);
+
+  data.timeEntries.push({
+    id: genId(),
+    patientId,
+    date,
+    month,
+    program,
+    provider,
+    minutes,
+    activities,
+    notes,
+    createdAt: new Date().toISOString()
+  });
+
+  saveData();
+  closeModal();
+  if (currentPatientId === patientId) renderPatientChart(patientId);
+}
+
+// ==================== ADD / EDIT PATIENT ====================
+function showAddPatient() {
+  document.getElementById('modalContainer').innerHTML = `
+    <div class="modal-overlay" onclick="if(event.target===this)closeModal()">
+      <div class="modal">
+        <h2>Add New Patient</h2>
+        <div class="form-row-inline">
+          <div class="form-row"><label>Full Name *</label><input type="text" id="ptName" placeholder="Last, First"></div>
+          <div class="form-row"><label>Date of Birth</label><input type="date" id="ptDob"></div>
+        </div>
+        <div class="form-row-inline">
+          <div class="form-row">
+            <label>Program *</label>
+            <select id="ptProgram"><option value="CCM">CCM</option><option value="RPM">RPM</option><option value="Both">Both (CCM + RPM)</option></select>
+          </div>
+          <div class="form-row">
+            <label>Complex?</label>
+            <select id="ptComplex"><option value="0">No</option><option value="1">Yes</option></select>
+          </div>
+        </div>
+        <div class="form-row-inline">
+          <div class="form-row">
+            <label>Provider</label>
+            <select id="ptProvider"><option value="">Select...</option>${data.providers.map(p => `<option value="${p}">${p}</option>`).join('')}</select>
+          </div>
+          <div class="form-row">
+            <label>Location</label>
+            <select id="ptLocation"><option value="">Select...</option>${data.locations.map(l => `<option value="${l}">${l}</option>`).join('')}</select>
+          </div>
+        </div>
+        <div class="form-row"><label>Insurance</label><input type="text" id="ptInsurance" placeholder="Insurance name"></div>
+        <div class="form-row"><label>Diagnoses</label><textarea id="ptDiagnoses" rows="2" placeholder="Comma-separated diagnoses"></textarea></div>
+        <div class="modal-actions">
+          <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+          <button class="btn btn-success btn-lg" onclick="saveNewPatient()">Add Patient</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function saveNewPatient() {
+  const name = document.getElementById('ptName').value.trim();
+  if (!name) { alert('Name is required.'); return; }
+
+  data.patients.push({
+    id: genId(),
+    name,
+    dob: document.getElementById('ptDob').value,
+    program: document.getElementById('ptProgram').value,
+    complex: document.getElementById('ptComplex').value === '1',
+    provider: document.getElementById('ptProvider').value,
+    location: document.getElementById('ptLocation').value,
+    insurance: document.getElementById('ptInsurance').value.trim(),
+    diagnoses: document.getElementById('ptDiagnoses').value.trim(),
+    carePlan: '',
+    createdAt: new Date().toISOString()
+  });
+
+  saveData();
+  closeModal();
+  renderCurrentView();
+}
+
+function showEditPatient(patientId) {
+  const p = data.patients.find(x => x.id === patientId);
+  if (!p) return;
+
+  document.getElementById('modalContainer').innerHTML = `
+    <div class="modal-overlay" onclick="if(event.target===this)closeModal()">
+      <div class="modal">
+        <h2>Edit Patient</h2>
+        <div class="form-row-inline">
+          <div class="form-row"><label>Full Name *</label><input type="text" id="ptName" value="${escapeHtml(p.name)}"></div>
+          <div class="form-row"><label>Date of Birth</label><input type="date" id="ptDob" value="${p.dob || ''}"></div>
+        </div>
+        <div class="form-row-inline">
+          <div class="form-row">
+            <label>Program *</label>
+            <select id="ptProgram">
+              <option value="CCM" ${p.program === 'CCM' ? 'selected' : ''}>CCM</option>
+              <option value="RPM" ${p.program === 'RPM' ? 'selected' : ''}>RPM</option>
+              <option value="Both" ${p.program === 'Both' ? 'selected' : ''}>Both (CCM + RPM)</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <label>Complex?</label>
+            <select id="ptComplex"><option value="0" ${!p.complex ? 'selected' : ''}>No</option><option value="1" ${p.complex ? 'selected' : ''}>Yes</option></select>
+          </div>
+        </div>
+        <div class="form-row-inline">
+          <div class="form-row">
+            <label>Provider</label>
+            <select id="ptProvider"><option value="">Select...</option>${data.providers.map(pr => `<option value="${pr}" ${pr === p.provider ? 'selected' : ''}>${pr}</option>`).join('')}</select>
+          </div>
+          <div class="form-row">
+            <label>Location</label>
+            <select id="ptLocation"><option value="">Select...</option>${data.locations.map(l => `<option value="${l}" ${l === p.location ? 'selected' : ''}>${l}</option>`).join('')}</select>
+          </div>
+        </div>
+        <div class="form-row"><label>Insurance</label><input type="text" id="ptInsurance" value="${escapeHtml(p.insurance || '')}"></div>
+        <div class="form-row"><label>Diagnoses</label><textarea id="ptDiagnoses" rows="2">${escapeHtml(p.diagnoses || '')}</textarea></div>
+        <div class="modal-actions">
+          <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+          <button class="btn btn-success btn-lg" onclick="updatePatient('${p.id}')">Save Changes</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function updatePatient(patientId) {
+  const p = data.patients.find(x => x.id === patientId);
+  if (!p) return;
+  const name = document.getElementById('ptName').value.trim();
+  if (!name) { alert('Name is required.'); return; }
+
+  p.name = name;
+  p.dob = document.getElementById('ptDob').value;
+  p.program = document.getElementById('ptProgram').value;
+  p.complex = document.getElementById('ptComplex').value === '1';
+  p.provider = document.getElementById('ptProvider').value;
+  p.location = document.getElementById('ptLocation').value;
+  p.insurance = document.getElementById('ptInsurance').value.trim();
+  p.diagnoses = document.getElementById('ptDiagnoses').value.trim();
+
+  saveData();
+  closeModal();
+  renderPatientChart(patientId);
+}
+
+// ==================== PROVIDERS VIEW ====================
+function renderProviders() {
+  const month = getCurrentMonth();
+  const tbody = document.getElementById('providerTableBody');
+
+  const providerStats = data.providers.map(prov => {
+    const patients = data.patients.filter(p => p.provider === prov);
+    const entries = data.timeEntries.filter(e => e.provider === prov && e.month === month);
+    const totalMins = entries.reduce((s, e) => s + e.minutes, 0);
+    const billable = patients.filter(p => getPatientMinutes(p.id, month) >= 20).length;
+    const avgMin = patients.length > 0 ? totalMins / patients.length : 0;
+    return { name: prov, patients: patients.length, totalMins, billable, entries: entries.length, avgMin };
+  });
+
+  tbody.innerHTML = providerStats.map(s => `
+    <tr style="cursor:default;">
+      <td style="font-weight:600;">${escapeHtml(s.name)}</td>
+      <td>${s.patients}</td>
+      <td style="font-weight:600;">${Math.round(s.totalMins)}</td>
+      <td><span class="badge badge-green">${s.billable}</span></td>
+      <td>${s.entries}</td>
+      <td>${s.avgMin.toFixed(1)}</td>
+    </tr>
+  `).join('');
+}
+
+function showAddProvider() {
+  const name = prompt('Enter provider name:');
+  if (name && name.trim()) {
+    if (!data.providers.includes(name.trim())) {
+      data.providers.push(name.trim());
+      saveData();
+      refreshProviderSelectors();
+      renderProviders();
+    }
+  }
+}
+
+// ==================== SETTINGS ====================
+function renderSettings() {
+  // Providers list
+  document.getElementById('providerList').innerHTML = data.providers.map(p =>
+    `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);">
+      <span>${escapeHtml(p)}</span>
+      <button class="delete-entry" onclick="removeProvider('${escapeHtml(p)}')">&times;</button>
+    </div>`
+  ).join('');
+
+  // Locations list
+  document.getElementById('locationList').innerHTML = data.locations.map(l =>
+    `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);">
+      <span>${escapeHtml(l)}</span>
+      <button class="delete-entry" onclick="removeLocation('${escapeHtml(l)}')">&times;</button>
+    </div>`
+  ).join('');
+}
+
+function addProvider() {
+  const name = document.getElementById('newProviderName').value.trim();
+  if (!name) return;
+  if (!data.providers.includes(name)) {
+    data.providers.push(name);
+    saveData();
+    document.getElementById('newProviderName').value = '';
+    refreshProviderSelectors();
+    renderSettings();
+  }
+}
+
+function removeProvider(name) {
+  data.providers = data.providers.filter(p => p !== name);
+  saveData();
+  refreshProviderSelectors();
+  renderSettings();
+}
+
+function addLocation() {
+  const name = document.getElementById('newLocationName').value.trim();
+  if (!name) return;
+  if (!data.locations.includes(name)) {
+    data.locations.push(name);
+    saveData();
+    document.getElementById('newLocationName').value = '';
+    refreshProviderSelectors();
+    renderSettings();
+  }
+}
+
+function removeLocation(name) {
+  data.locations = data.locations.filter(l => l !== name);
+  saveData();
+  refreshProviderSelectors();
+  renderSettings();
+}
+
+// ==================== CSV EXPORT ====================
+function exportCSV() {
+  const month = getCurrentMonth();
+  const rows = [['Patient Name', 'DOB', 'Program', 'Provider', 'Location', 'Insurance', 'Total Minutes', 'Status', 'Date', 'Entry Minutes', 'Entry Provider', 'Activities', 'Notes']];
+
+  data.patients.forEach(p => {
+    const entries = data.timeEntries.filter(e => e.patientId === p.id && e.month === month);
+    const totalMins = entries.reduce((s, e) => s + e.minutes, 0);
+    const tier = getStatusTier(totalMins);
+
+    if (entries.length === 0) {
+      rows.push([p.name, p.dob || '', p.program, p.provider || '', p.location || '', p.insurance || '', '0', tier.label, '', '', '', '', '']);
+    } else {
+      entries.forEach(e => {
+        rows.push([p.name, p.dob || '', p.program, p.provider || '', p.location || '', p.insurance || '', totalMins.toFixed(1), tier.label, e.date, e.minutes.toFixed(1), e.provider || '', (e.activities || []).join('; '), e.notes || '']);
+      });
+    }
+  });
+
+  const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+  downloadFile(csv, `ccm-rpm-billing-${month}.csv`, 'text/csv');
+}
+
+function downloadFile(content, filename, type) {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ==================== CSV IMPORT ====================
+function showImportModal() {
+  switchView('settings');
+}
+
+function handleCSVDrop(event) {
+  event.preventDefault();
+  event.target.classList.remove('dragover');
+  const file = event.dataTransfer.files[0];
+  if (file) handleCSVFile(file);
+}
+
+function handleCSVFile(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const text = e.target.result;
+    const lines = text.split('\n').map(l => l.trim()).filter(l => l);
+    if (lines.length < 2) { alert('CSV must have a header row and at least one data row.'); return; }
+
+    const header = parseCSVLine(lines[0]).map(h => h.toLowerCase().trim());
+    let imported = 0;
+
+    for (let i = 1; i < lines.length; i++) {
+      const cols = parseCSVLine(lines[i]);
+      const obj = {};
+      header.forEach((h, idx) => obj[h] = (cols[idx] || '').trim());
+
+      const name = obj.name || obj['patient name'] || obj['full name'] || '';
+      if (!name) continue;
+
+      // Skip if patient with same name and DOB exists
+      const dob = obj.dob || obj['date of birth'] || '';
+      if (data.patients.some(p => p.name === name && p.dob === dob)) continue;
+
+      data.patients.push({
+        id: genId(),
+        name,
+        dob,
+        diagnoses: obj.diagnoses || obj.diagnosis || '',
+        insurance: obj.insurance || '',
+        provider: obj.provider || '',
+        location: obj.location || '',
+        program: (obj.program || 'CCM').toUpperCase(),
+        complex: (obj.complex || '').toLowerCase() === 'yes' || obj.complex === '1',
+        carePlan: '',
+        createdAt: new Date().toISOString()
+      });
+      imported++;
+    }
+
+    saveData();
+    refreshProviderSelectors();
+    renderCurrentView();
+    alert(`Imported ${imported} patients.`);
+  };
+  reader.readAsText(file);
+}
+
+function parseCSVLine(line) {
+  const result = [];
+  let current = '';
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (inQuotes) {
+      if (c === '"') {
+        if (i + 1 < line.length && line[i + 1] === '"') { current += '"'; i++; }
+        else inQuotes = false;
+      } else { current += c; }
+    } else {
+      if (c === '"') inQuotes = true;
+      else if (c === ',') { result.push(current); current = ''; }
+      else current += c;
+    }
+  }
+  result.push(current);
+  return result;
+}
+
+// ==================== JSON EXPORT/IMPORT ====================
+function exportAllData() {
+  const json = JSON.stringify(data, null, 2);
+  downloadFile(json, `ccm-rpm-data-${new Date().toISOString().split('T')[0]}.json`, 'application/json');
+}
+
+function importAllData(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const imported = JSON.parse(e.target.result);
+      if (!imported.patients || !Array.isArray(imported.patients)) {
+        alert('Invalid data file.'); return;
+      }
+      if (!confirm(`Import ${imported.patients.length} patients and ${(imported.timeEntries || []).length} time entries? This will REPLACE all current data.`)) return;
+      data = imported;
+      saveData();
+      refreshProviderSelectors();
+      renderCurrentView();
+      alert('Data imported successfully.');
+    } catch(err) {
+      alert('Error parsing file: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+}
+
+// ==================== SEED DEMO DATA ====================
+function seedDemoData() {
+  if (data.patients.length > 0) return; // Don't seed if data exists
+
+  const firstNames = ['James', 'Mary', 'Robert', 'Patricia', 'John', 'Jennifer', 'Michael', 'Linda', 'David', 'Barbara', 'William', 'Elizabeth', 'Richard', 'Susan', 'Joseph', 'Dorothy', 'Thomas', 'Karen', 'Charles', 'Nancy', 'Helen', 'Daniel', 'Margaret', 'Paul', 'Ruth', 'George', 'Sharon', 'Kenneth', 'Donna', 'Steven'];
+  const lastNames = ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis', 'Rodriguez', 'Martinez', 'Hernandez', 'Lopez', 'Gonzalez', 'Wilson', 'Anderson', 'Thomas', 'Taylor', 'Moore', 'Jackson', 'Martin', 'Lee', 'Perez', 'Thompson', 'White', 'Harris', 'Clark', 'Lewis', 'Robinson', 'Walker', 'Young'];
+  const programs = ['CCM', 'RPM', 'Both'];
+  const diagnoses = ['HTN', 'DM Type 2', 'CHF', 'COPD', 'CKD Stage 3', 'Afib', 'Obesity', 'CAD', 'Asthma', 'Hypothyroidism'];
+  const insurances = ['Medicare', 'Medicare Advantage', 'Blue Cross', 'Aetna', 'UHC', 'Cigna', 'Humana', 'Medicaid'];
+
+  const month = getCurrentMonth();
+
+  // Create 30 demo patients
+  for (let i = 0; i < 30; i++) {
+    const fn = firstNames[i % firstNames.length];
+    const ln = lastNames[i % lastNames.length];
+    const pid = genId();
+    const program = programs[i % 3];
+    const provider = data.providers[i % data.providers.length];
+    const location = data.locations[i % data.locations.length];
+
+    const dob = `${1940 + Math.floor(Math.random() * 40)}-${String(Math.floor(Math.random()*12)+1).padStart(2,'0')}-${String(Math.floor(Math.random()*28)+1).padStart(2,'0')}`;
+    const numDiag = 2 + Math.floor(Math.random() * 3);
+    const patDiag = [];
+    for (let d = 0; d < numDiag; d++) patDiag.push(diagnoses[(i + d) % diagnoses.length]);
+
+    data.patients.push({
+      id: pid,
+      name: `${ln}, ${fn}`,
+      dob,
+      program,
+      complex: Math.random() > 0.7,
+      provider,
+      location,
+      insurance: insurances[i % insurances.length],
+      diagnoses: patDiag.join(', '),
+      carePlan: '',
+      createdAt: new Date().toISOString()
+    });
+
+    // Add varied time entries to create interesting distribution
+    const targetMins = [0, 5, 8, 12, 16, 18, 19, 22, 25, 30, 35, 37, 38, 42, 45][i % 15];
+    if (targetMins > 0) {
+      const numEntries = Math.ceil(targetMins / 10);
+      let remaining = targetMins;
+      for (let e = 0; e < numEntries; e++) {
+        const entryMins = e === numEntries - 1 ? remaining : Math.min(remaining, 5 + Math.floor(Math.random() * 10));
+        remaining -= entryMins;
+        if (entryMins <= 0) continue;
+
+        const activities = (program === 'RPM' ? RPM_ACTIVITIES : CCM_ACTIVITIES).slice(0, 2 + Math.floor(Math.random() * 4));
+        const day = Math.max(1, Math.floor(Math.random() * 16) + 1);
+        const dateStr = `${month}-${String(day).padStart(2,'0')}`;
+
+        data.timeEntries.push({
+          id: genId(),
+          patientId: pid,
+          date: dateStr,
+          month,
+          program: program === 'Both' ? (Math.random() > 0.5 ? 'CCM' : 'RPM') : program,
+          provider,
+          minutes: entryMins,
+          activities,
+          notes: '',
+          createdAt: new Date().toISOString()
+        });
+      }
+    }
+  }
+
+  saveData();
+}
+
+// ==================== INIT ====================
+function init() {
+  initMonthSelector();
+  seedDemoData();
+  refreshProviderSelectors();
+  renderDashboard();
+
+  // Listen for provider/month changes
+  document.getElementById('activeProvider').addEventListener('change', renderCurrentView);
+}
+
+init();
+</script>
+</body>
+</html>
