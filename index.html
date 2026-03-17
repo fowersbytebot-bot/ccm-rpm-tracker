@@ -2,7 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>CCM/RPM Minute Tracker</title>
 <style>
 :root {
@@ -459,20 +461,83 @@ tr { cursor: pointer; transition: background var(--transition); }
 }
 .back-btn:hover { color: var(--text-primary); }
 
+/* Bottom nav for mobile */
+.bottom-nav {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border);
+  z-index: 100;
+  padding: 8px 0 env(safe-area-inset-bottom, 8px);
+}
+.bottom-nav .nav-items {
+  display: flex;
+  justify-content: space-around;
+}
+.bottom-nav .nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 16px;
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  background: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.bottom-nav .nav-item.active { color: var(--accent); }
+.bottom-nav .nav-item .nav-icon { font-size: 22px; }
+
 /* Responsive */
 @media (max-width: 1024px) {
   .grid-4 { grid-template-columns: repeat(2, 1fr); }
   .grid-3 { grid-template-columns: repeat(2, 1fr); }
   .timer-display { font-size: 36px; }
 }
+
 @media (max-width: 768px) {
   .grid-4, .grid-3, .grid-2 { grid-template-columns: 1fr; }
-  header { flex-wrap: wrap; gap: 8px; padding: 8px 16px; }
-  main { padding: 16px; }
-  .timer-bar { flex-wrap: wrap; gap: 8px; padding: 8px 16px; }
-  .timer-display { font-size: 32px; }
+  header { padding: 8px 12px; }
+  header nav { display: none; }
+  .header-right { gap: 6px; flex-wrap: wrap; }
+  .header-right .btn { padding: 8px 10px; font-size: 12px; }
+  main { padding: 12px; padding-bottom: 80px; }
+  .timer-bar { flex-wrap: wrap; gap: 8px; padding: 8px 12px; top: auto; bottom: 60px; position: fixed; left: 0; right: 0; z-index: 150; border-top: 2px solid var(--accent); border-bottom: none; }
+  .timer-display { font-size: 28px; }
   .checkbox-grid { grid-template-columns: 1fr; }
-  nav { overflow-x: auto; }
+  .mobile-bottom-nav { display: flex; }
+  .table-wrap { display: none; }
+  .patient-card-list { display: block; }
+  .modal { max-width: 100%; margin: 10px; padding: 16px; max-height: 95vh; }
+  .modal-overlay { padding: 0; align-items: flex-end; }
+  .form-row-inline { flex-direction: column; gap: 0; }
+  .patient-header { flex-direction: column; gap: 12px; }
+  .patient-header > div:last-child { text-align: left; }
+  .patient-header > div:last-child .progress-bar { width: 100%; }
+  .tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .tab-btn { padding: 10px 14px; white-space: nowrap; font-size: 12px; }
+  .search-bar { flex-direction: column; }
+  .search-bar input { max-width: 100%; }
+  .filters { width: 100%; }
+  .filters select { flex: 1; min-width: 0; }
+  .btn { padding: 10px 16px; font-size: 14px; }
+  .btn-sm { padding: 8px 12px; font-size: 13px; }
+  .stat-card .stat-value { font-size: 24px; }
+  .card { padding: 14px; }
+  .almost-item { padding: 12px; }
+  .time-entry { padding: 12px; }
+  .settings-grid { grid-template-columns: 1fr; }
+}
+
+@media (min-width: 769px) {
+  .mobile-actions { display: none; }
+  .mobile-patient-cards { display: none; }
 }
 
 /* Scrollbar */
@@ -500,6 +565,120 @@ tr { cursor: pointer; transition: background var(--transition); }
   transition: all var(--transition);
 }
 .drop-zone:hover, .drop-zone.dragover { border-color: var(--accent); background: var(--accent-dim); }
+
+/* ===== MOBILE BOTTOM NAV ===== */
+.mobile-bottom-nav {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border);
+  padding: 4px 0;
+  padding-bottom: env(safe-area-inset-bottom, 4px);
+  z-index: 200;
+  justify-content: space-around;
+}
+.mobile-bottom-nav button {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 10px;
+  padding: 6px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  cursor: pointer;
+  border-radius: var(--radius);
+  transition: all var(--transition);
+  min-width: 60px;
+}
+.mobile-bottom-nav button .nav-icon { font-size: 20px; }
+.mobile-bottom-nav button.active { color: var(--accent); }
+.mobile-bottom-nav button:active { background: var(--bg-hover); }
+
+/* Mobile patient cards (replace table on small screens) */
+.patient-card-list { display: none; }
+.patient-card-mobile {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 14px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: background var(--transition);
+}
+.patient-card-mobile:active { background: var(--bg-hover); }
+.patient-card-mobile .pcm-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+.patient-card-mobile .pcm-name { font-weight: 600; font-size: 15px; }
+.patient-card-mobile .pcm-mins { font-weight: 700; font-size: 18px; }
+.patient-card-mobile .pcm-bottom {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.patient-card-mobile .pcm-bottom .badge { font-size: 10px; }
+
+/* ICD-10 tag styles */
+.icd-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--blue-bg);
+  color: var(--blue);
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  margin: 2px;
+}
+.icd-tag .icd-desc {
+  color: var(--text-secondary);
+  font-weight: 400;
+  font-size: 11px;
+}
+.icd-tag .icd-remove {
+  cursor: pointer;
+  margin-left: 4px;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+.icd-tag .icd-remove:hover { color: var(--red); }
+
+/* ICD-10 search dropdown */
+.icd-search-wrapper { position: relative; }
+.icd-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 50;
+  display: none;
+}
+.icd-dropdown.show { display: block; }
+.icd-option {
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 13px;
+  border-bottom: 1px solid var(--border);
+  transition: background var(--transition);
+}
+.icd-option:hover, .icd-option.highlighted { background: var(--bg-hover); }
+.icd-option .icd-code-label { font-weight: 600; color: var(--blue); margin-right: 8px; }
 
 /* Revenue row */
 .revenue-row {
@@ -561,6 +740,15 @@ tr { cursor: pointer; transition: background var(--transition); }
       <button class="btn btn-secondary btn-sm" onclick="showImportModal()">Import</button>
     </div>
   </header>
+
+  <div class="mobile-actions" id="mobileActions">
+    <select class="month-select" id="mobileMonth" style="min-width:120px;"></select>
+    <select class="provider-select" id="mobileProvider" style="min-width:120px;">
+      <option value="">All Providers</option>
+    </select>
+    <button class="btn btn-primary btn-sm" onclick="showAddPatient()">+ Patient</button>
+    <button class="btn btn-secondary btn-sm" onclick="exportCSV()">Export</button>
+  </div>
 
   <!-- Timer Bar (shown when patient is open and timer active) -->
   <div class="timer-bar" id="timerBar" style="display:none;">
@@ -663,7 +851,9 @@ tr { cursor: pointer; transition: background var(--transition); }
           </thead>
           <tbody id="patientTableBody"></tbody>
         </table>
+        <div class="mobile-patient-cards" id="mobilePatientCards"></div>
       </div>
+      <div class="patient-card-list" id="patientCardList"></div>
     </div>
 
     <!-- Patient Chart View -->
@@ -746,6 +936,35 @@ tr { cursor: pointer; transition: background var(--transition); }
       </div>
     </div>
   </main>
+
+  <div class="bottom-nav" id="bottomNav">
+    <div class="nav-items">
+      <button class="nav-item active" data-view="dashboard"><span class="nav-icon">📊</span>Dashboard</button>
+      <button class="nav-item" data-view="patients"><span class="nav-icon">👥</span>Patients</button>
+      <button class="nav-item" data-view="providers"><span class="nav-icon">👨‍⚕️</span>Providers</button>
+      <button class="nav-item" data-view="settings"><span class="nav-icon">⚙️</span>Settings</button>
+    </div>
+  </div>
+</div>
+
+<!-- Mobile Bottom Nav -->
+<div class="mobile-bottom-nav" id="mobileNav">
+  <button data-view="dashboard" class="active" onclick="switchView('dashboard')">
+    <span class="nav-icon">📊</span>
+    <span>Dashboard</span>
+  </button>
+  <button data-view="patients" onclick="switchView('patients')">
+    <span class="nav-icon">👥</span>
+    <span>Patients</span>
+  </button>
+  <button data-view="providers" onclick="switchView('providers')">
+    <span class="nav-icon">🏥</span>
+    <span>Providers</span>
+  </button>
+  <button data-view="settings" onclick="switchView('settings')">
+    <span class="nav-icon">⚙️</span>
+    <span>Settings</span>
+  </button>
 </div>
 
 <!-- Modal container -->
@@ -793,6 +1012,98 @@ const BILLING_CODES = {
   '99453': { label: 'RPM Device setup', rate: 19, minMinutes: 0, type: 'RPM' },
   '99454': { label: 'RPM Device supply (16+ days)', rate: 55, minMinutes: 0, type: 'RPM' },
 };
+
+const ICD10_DATABASE = [
+  { code: 'I10', desc: 'Essential (primary) hypertension' },
+  { code: 'I11.0', desc: 'Hypertensive heart disease with heart failure' },
+  { code: 'I11.9', desc: 'Hypertensive heart disease without heart failure' },
+  { code: 'I25.10', desc: 'Atherosclerotic heart disease of native coronary artery' },
+  { code: 'I25.110', desc: 'Atherosclerotic heart disease with unstable angina' },
+  { code: 'I48.0', desc: 'Paroxysmal atrial fibrillation' },
+  { code: 'I48.1', desc: 'Persistent atrial fibrillation' },
+  { code: 'I48.2', desc: 'Chronic atrial fibrillation' },
+  { code: 'I48.91', desc: 'Unspecified atrial fibrillation' },
+  { code: 'I50.1', desc: 'Left ventricular failure, unspecified' },
+  { code: 'I50.20', desc: 'Unspecified systolic (congestive) heart failure' },
+  { code: 'I50.22', desc: 'Chronic systolic (congestive) heart failure' },
+  { code: 'I50.30', desc: 'Unspecified diastolic (congestive) heart failure' },
+  { code: 'I50.32', desc: 'Chronic diastolic (congestive) heart failure' },
+  { code: 'I50.9', desc: 'Heart failure, unspecified' },
+  { code: 'I63.9', desc: 'Cerebral infarction, unspecified' },
+  { code: 'I73.9', desc: 'Peripheral vascular disease, unspecified' },
+  { code: 'E11.9', desc: 'Type 2 diabetes mellitus without complications' },
+  { code: 'E11.65', desc: 'Type 2 diabetes mellitus with hyperglycemia' },
+  { code: 'E11.21', desc: 'Type 2 diabetes with diabetic nephropathy' },
+  { code: 'E11.22', desc: 'Type 2 diabetes with diabetic chronic kidney disease' },
+  { code: 'E11.40', desc: 'Type 2 diabetes with diabetic neuropathy, unspecified' },
+  { code: 'E11.42', desc: 'Type 2 diabetes with diabetic polyneuropathy' },
+  { code: 'E11.51', desc: 'Type 2 diabetes with diabetic peripheral angiopathy without gangrene' },
+  { code: 'E11.319', desc: 'Type 2 diabetes with unspecified diabetic retinopathy without macular edema' },
+  { code: 'E10.9', desc: 'Type 1 diabetes mellitus without complications' },
+  { code: 'E10.65', desc: 'Type 1 diabetes mellitus with hyperglycemia' },
+  { code: 'E13.9', desc: 'Other specified diabetes mellitus without complications' },
+  { code: 'J44.0', desc: 'COPD with acute lower respiratory infection' },
+  { code: 'J44.1', desc: 'COPD with acute exacerbation' },
+  { code: 'J44.9', desc: 'COPD, unspecified' },
+  { code: 'J45.20', desc: 'Mild intermittent asthma, uncomplicated' },
+  { code: 'J45.30', desc: 'Mild persistent asthma, uncomplicated' },
+  { code: 'J45.40', desc: 'Moderate persistent asthma, uncomplicated' },
+  { code: 'J45.50', desc: 'Severe persistent asthma, uncomplicated' },
+  { code: 'J45.909', desc: 'Unspecified asthma, uncomplicated' },
+  { code: 'J84.10', desc: 'Pulmonary fibrosis, unspecified' },
+  { code: 'N18.1', desc: 'Chronic kidney disease, stage 1' },
+  { code: 'N18.2', desc: 'Chronic kidney disease, stage 2' },
+  { code: 'N18.3', desc: 'Chronic kidney disease, stage 3 unspecified' },
+  { code: 'N18.30', desc: 'Chronic kidney disease, stage 3 unspecified' },
+  { code: 'N18.31', desc: 'Chronic kidney disease, stage 3a' },
+  { code: 'N18.32', desc: 'Chronic kidney disease, stage 3b' },
+  { code: 'N18.4', desc: 'Chronic kidney disease, stage 4' },
+  { code: 'N18.5', desc: 'Chronic kidney disease, stage 5' },
+  { code: 'N18.6', desc: 'End stage renal disease' },
+  { code: 'N18.9', desc: 'Chronic kidney disease, unspecified' },
+  { code: 'E03.9', desc: 'Hypothyroidism, unspecified' },
+  { code: 'E05.90', desc: 'Thyrotoxicosis, unspecified without thyrotoxic crisis' },
+  { code: 'E66.01', desc: 'Morbid (severe) obesity due to excess calories' },
+  { code: 'E66.09', desc: 'Other obesity due to excess calories' },
+  { code: 'E66.9', desc: 'Obesity, unspecified' },
+  { code: 'E78.00', desc: 'Pure hypercholesterolemia, unspecified' },
+  { code: 'E78.1', desc: 'Pure hyperglyceridemia' },
+  { code: 'E78.2', desc: 'Mixed hyperlipidemia' },
+  { code: 'E78.5', desc: 'Hyperlipidemia, unspecified' },
+  { code: 'E87.6', desc: 'Hypokalemia' },
+  { code: 'F32.0', desc: 'Major depressive disorder, single episode, mild' },
+  { code: 'F32.1', desc: 'Major depressive disorder, single episode, moderate' },
+  { code: 'F32.9', desc: 'Major depressive disorder, single episode, unspecified' },
+  { code: 'F33.0', desc: 'Major depressive disorder, recurrent, mild' },
+  { code: 'F33.1', desc: 'Major depressive disorder, recurrent, moderate' },
+  { code: 'F41.1', desc: 'Generalized anxiety disorder' },
+  { code: 'F41.9', desc: 'Anxiety disorder, unspecified' },
+  { code: 'F17.210', desc: 'Nicotine dependence, cigarettes, uncomplicated' },
+  { code: 'M17.11', desc: 'Primary osteoarthritis, right knee' },
+  { code: 'M17.12', desc: 'Primary osteoarthritis, left knee' },
+  { code: 'M17.9', desc: 'Osteoarthritis of knee, unspecified' },
+  { code: 'M19.90', desc: 'Unspecified osteoarthritis, unspecified site' },
+  { code: 'M54.5', desc: 'Low back pain' },
+  { code: 'M81.0', desc: 'Age-related osteoporosis without current pathological fracture' },
+  { code: 'K21.0', desc: 'Gastro-esophageal reflux disease with esophagitis' },
+  { code: 'K21.9', desc: 'Gastro-esophageal reflux disease without esophagitis' },
+  { code: 'K76.0', desc: 'Fatty (change of) liver, not elsewhere classified' },
+  { code: 'G20', desc: "Parkinson's disease" },
+  { code: 'G30.9', desc: "Alzheimer's disease, unspecified" },
+  { code: 'G40.909', desc: 'Epilepsy, unspecified, not intractable' },
+  { code: 'G43.909', desc: 'Migraine, unspecified, not intractable' },
+  { code: 'G47.33', desc: 'Obstructive sleep apnea' },
+  { code: 'G89.29', desc: 'Other chronic pain' },
+  { code: 'D64.9', desc: 'Anemia, unspecified' },
+  { code: 'D50.9', desc: 'Iron deficiency anemia, unspecified' },
+  { code: 'R73.03', desc: 'Prediabetes' },
+  { code: 'Z79.4', desc: 'Long term (current) use of insulin' },
+  { code: 'Z79.84', desc: 'Long term (current) use of oral hypoglycemic drugs' },
+  { code: 'Z87.891', desc: 'Personal history of nicotine dependence' },
+  { code: 'Z96.1', desc: 'Presence of intraocular lens' },
+  { code: 'Z95.1', desc: 'Presence of aortocoronary bypass graft' },
+  { code: 'Z95.5', desc: 'Presence of coronary angioplasty implant and graft' },
+];
 
 function getDefaultData() {
   return {
@@ -914,7 +1225,7 @@ function initMonthSelector() {
 
 // ==================== PROVIDER / LOCATION SELECTORS ====================
 function refreshProviderSelectors() {
-  const selectors = [document.getElementById('activeProvider'), document.getElementById('filterProvider')];
+  const selectors = [document.getElementById('activeProvider'), document.getElementById('filterProvider'), document.getElementById('mobileProvider')];
   for (const sel of selectors) {
     if (!sel) continue;
     const val = sel.value;
@@ -961,6 +1272,11 @@ document.getElementById('mainNav').addEventListener('click', (e) => {
 function switchView(view) {
   currentView = view;
   document.querySelectorAll('#mainNav button').forEach(b => b.classList.toggle('active', b.dataset.view === view));
+  document.querySelectorAll('#mobileNav button').forEach(b => b.classList.toggle('active', b.dataset.view === view));
+  document.querySelectorAll('#bottomNav .nav-item').forEach(b => {
+    const bv = b.dataset.view;
+    b.classList.toggle('active', bv === view || (view === 'patientChart' && bv === 'patients'));
+  });
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
 
   if (view === 'dashboard') document.getElementById('dashboardView').classList.add('active');
@@ -1167,6 +1483,8 @@ function renderPatientList() {
   });
 
   const tbody = document.getElementById('patientTableBody');
+  const mobileCards = document.getElementById('mobilePatientCards');
+
   tbody.innerHTML = patients.map(p => {
     const mins = getPatientMinutes(p.id, month);
     const tier = getStatusTier(mins);
@@ -1184,6 +1502,54 @@ function renderPatientList() {
       <td style="font-weight:600;color:${needed <= 5 ? 'var(--orange)' : 'var(--text-secondary)'}">${needed > 0 ? Math.ceil(needed) + ' min' : '—'}</td>
     </tr>`;
   }).join('');
+
+  if (mobileCards) {
+    mobileCards.innerHTML = patients.map(p => {
+      const mins = getPatientMinutes(p.id, month);
+      const tier = getStatusTier(mins);
+      const needed = getMinutesNeeded(mins);
+      const icdCodes = (p.icd10 || '').split(',').map(c => c.trim()).filter(Boolean).slice(0, 2);
+      return `<div class="card" style="padding:14px;margin-bottom:8px;cursor:pointer;" onclick="openPatientChart('${p.id}')">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <div style="font-weight:600;font-size:15px;">${escapeHtml(p.name)}</div>
+            <div style="font-size:12px;color:var(--text-secondary);margin-top:2px;">${escapeHtml(p.provider || '')} · ${escapeHtml(p.location || '')}</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-weight:700;font-size:18px;color:var(--${tier.color})">${Math.round(mins)} min</div>
+            <span class="badge badge-${tier.color}" style="font-size:10px;">${tier.emoji} ${tier.label}</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
+          <span class="badge badge-teal">${p.program}</span>
+          ${icdCodes.map(c => '<span class="badge" style="background:var(--accent-dim);color:var(--accent);">' + escapeHtml(c) + '</span>').join('')}
+          ${needed > 0 && needed <= 5 ? '<span style="font-size:11px;color:var(--orange);">🔥 ' + Math.ceil(needed) + ' min to go</span>' : ''}
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // Mobile card list
+  const cardList = document.getElementById('patientCardList');
+  if (cardList) {
+    cardList.innerHTML = patients.map(p => {
+      const mins = getPatientMinutes(p.id, month);
+      const tier = getStatusTier(mins);
+      const needed = getMinutesNeeded(mins);
+      return `<div class="patient-card-mobile" onclick="openPatientChart('${p.id}')">
+        <div class="pcm-top">
+          <span class="pcm-name">${escapeHtml(p.name)}</span>
+          <span class="pcm-mins" style="color:${tier.color === 'gold' ? 'var(--gold)' : 'var(--'+tier.color+')'}">${Math.round(mins)} min</span>
+        </div>
+        <div class="pcm-bottom">
+          <span class="badge badge-teal">${p.program}</span>
+          <span class="badge badge-${tier.color}">${tier.emoji} ${tier.label}</span>
+          ${needed > 0 && needed <= 5 ? '<span style="color:var(--orange);font-weight:600;">Need ' + Math.ceil(needed) + ' min</span>' : ''}
+          <span>${escapeHtml(p.provider || '')}</span>
+        </div>
+      </div>`;
+    }).join('');
+  }
 }
 
 // ==================== PATIENT CHART ====================
@@ -1276,8 +1642,7 @@ function renderPatientChart(patientId) {
               <span style="color:var(--text-muted)">Provider:</span><span>${escapeHtml(p.provider || 'N/A')}</span>
               <span style="color:var(--text-muted)">Location:</span><span>${escapeHtml(p.location || 'N/A')}</span>
               <span style="color:var(--text-muted)">Insurance:</span><span>${escapeHtml(p.insurance || 'N/A')}</span>
-              <span style="color:var(--text-muted)">Diagnoses:</span><span>${escapeHtml(p.diagnoses || 'N/A')}</span>
-              <span style="color:var(--text-muted)">ICD-10:</span><span>${escapeHtml(p.icd10 || 'N/A')}</span>
+              <span style="color:var(--text-muted)">Diagnoses:</span><span>${(p.icd10 || '').split(',').map(c => c.trim()).filter(Boolean).map(code => { const found = ICD10_DATABASE.find(x => x.code === code); return '<span style="display:inline-block;padding:2px 8px;background:var(--accent-dim);border-radius:12px;font-size:12px;margin:2px;"><strong style="color:var(--accent);">' + code + '</strong> ' + (found ? escapeHtml(found.desc) : '') + '</span>'; }).join('') || 'N/A'}</span>
             </div>
           </div>
         </div>
@@ -1706,6 +2071,7 @@ function saveLogEntry(patientId) {
 
 // ==================== ADD / EDIT PATIENT ====================
 function showAddPatient() {
+  selectedICD10 = [];
   document.getElementById('modalContainer').innerHTML = `
     <div class="modal-overlay" onclick="if(event.target===this)closeModal()">
       <div class="modal">
@@ -1735,8 +2101,7 @@ function showAddPatient() {
           </div>
         </div>
         <div class="form-row"><label>Insurance</label><input type="text" id="ptInsurance" placeholder="Insurance name"></div>
-        <div class="form-row"><label>Diagnoses</label><textarea id="ptDiagnoses" rows="2" placeholder="Comma-separated diagnoses"></textarea></div>
-        <div class="form-row"><label>ICD-10 Codes</label><textarea id="ptICD10" rows="2" placeholder="e.g., E11.9, I10, J44.1 (comma-separated)"></textarea></div>
+        <div class="form-row"><label>ICD-10 Diagnoses</label><div id="icd10AddContainer"></div></div>
         <div class="modal-actions">
           <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
           <button class="btn btn-success btn-lg" onclick="saveNewPatient()">Add Patient</button>
@@ -1744,6 +2109,7 @@ function showAddPatient() {
       </div>
     </div>
   `;
+  setTimeout(() => renderICD10Field('icd10AddContainer', 'ptICD10', ''), 50);
 }
 
 function saveNewPatient() {
@@ -1759,14 +2125,15 @@ function saveNewPatient() {
     provider: document.getElementById('ptProvider').value,
     location: document.getElementById('ptLocation').value,
     insurance: document.getElementById('ptInsurance').value.trim(),
-    diagnoses: document.getElementById('ptDiagnoses').value.trim(),
     icd10: document.getElementById('ptICD10').value.trim(),
+    diagnoses: (document.getElementById('ptICD10').value.trim() || '').split(',').map(c => { const d = ICD10_COMMON[c.trim()]; return d ? d : c.trim(); }).filter(Boolean).join(', '),
     carePlan: '',
     createdAt: new Date().toISOString()
   });
 
   saveData();
   closeModal();
+  selectedICD10 = [];
   renderCurrentView();
 }
 
@@ -1807,8 +2174,15 @@ function showEditPatient(patientId) {
           </div>
         </div>
         <div class="form-row"><label>Insurance</label><input type="text" id="ptInsurance" value="${escapeHtml(p.insurance || '')}"></div>
-        <div class="form-row"><label>Diagnoses</label><textarea id="ptDiagnoses" rows="2">${escapeHtml(p.diagnoses || '')}</textarea></div>
-        <div class="form-row"><label>ICD-10 Codes</label><textarea id="ptICD10" rows="2" placeholder="e.g., E11.9, I10, J44.1 (comma-separated)">${escapeHtml(p.icd10 || '')}</textarea></div>
+        <div class="form-row">
+          <label>Diagnoses (ICD-10) *</label>
+          <div id="icd10Tags" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;min-height:32px;"></div>
+          <div style="position:relative;">
+            <input type="text" id="icd10Search" placeholder="Search by code or description (e.g., I10 or hypertension)" autocomplete="off" oninput="searchICD10(this.value)" onkeydown="handleICD10Key(event)">
+            <div id="icd10Dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;max-height:200px;overflow-y:auto;background:var(--bg-secondary);border:1px solid var(--border);border-top:none;border-radius:0 0 var(--radius) var(--radius);z-index:50;"></div>
+          </div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Type to search. Press Enter or click to add. Type a custom code if not in list.</div>
+        </div>
         <div class="modal-actions">
           <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
           <button class="btn btn-success btn-lg" onclick="updatePatient('${p.id}')">Save Changes</button>
@@ -1816,6 +2190,7 @@ function showEditPatient(patientId) {
       </div>
     </div>
   `;
+  loadICD10FromPatient(p);
 }
 
 function updatePatient(patientId) {
@@ -1831,8 +2206,8 @@ function updatePatient(patientId) {
   p.provider = document.getElementById('ptProvider').value;
   p.location = document.getElementById('ptLocation').value;
   p.insurance = document.getElementById('ptInsurance').value.trim();
-  p.diagnoses = document.getElementById('ptDiagnoses').value.trim();
-  p.icd10 = document.getElementById('ptICD10').value.trim();
+  p.diagnoses = getDiagnosesString();
+  p.icd10 = getICD10String();
 
   saveData();
   closeModal();
@@ -2154,6 +2529,206 @@ function seedDemoData() {
   saveData();
 }
 
+// ==================== ICD-10 DATABASE & SMART ENTRY ====================
+const ICD10_COMMON = {
+  'E11.9':'Type 2 diabetes mellitus without complications',
+  'E11.65':'Type 2 DM with hyperglycemia',
+  'E11.22':'Type 2 DM with diabetic chronic kidney disease',
+  'E11.40':'Type 2 DM with diabetic neuropathy, unspecified',
+  'E11.51':'Type 2 DM with diabetic peripheral angiopathy without gangrene',
+  'E11.621':'Type 2 DM with foot ulcer',
+  'E13.9':'Other specified diabetes mellitus without complications',
+  'I10':'Essential (primary) hypertension',
+  'I11.9':'Hypertensive heart disease without heart failure',
+  'I12.9':'Hypertensive chronic kidney disease with stage 1-4 CKD',
+  'I13.10':'Hypertensive heart and CKD without heart failure',
+  'I25.10':'Atherosclerotic heart disease of native coronary artery without angina',
+  'I25.110':'Atherosclerotic heart disease with unstable angina',
+  'I25.119':'Atherosclerotic heart disease with unspecified angina',
+  'I48.0':'Paroxysmal atrial fibrillation',
+  'I48.1':'Persistent atrial fibrillation',
+  'I48.2':'Chronic atrial fibrillation',
+  'I48.91':'Unspecified atrial fibrillation',
+  'I50.1':'Left ventricular failure, unspecified',
+  'I50.20':'Unspecified systolic (congestive) heart failure',
+  'I50.22':'Chronic systolic (congestive) heart failure',
+  'I50.30':'Unspecified diastolic (congestive) heart failure',
+  'I50.32':'Chronic diastolic (congestive) heart failure',
+  'I50.9':'Heart failure, unspecified',
+  'I63.9':'Cerebral infarction, unspecified',
+  'I73.9':'Peripheral vascular disease, unspecified',
+  'J44.0':'COPD with (acute) lower respiratory infection',
+  'J44.1':'COPD with (acute) exacerbation',
+  'J44.9':'COPD, unspecified',
+  'J45.20':'Mild intermittent asthma, uncomplicated',
+  'J45.30':'Mild persistent asthma, uncomplicated',
+  'J45.40':'Moderate persistent asthma, uncomplicated',
+  'J45.50':'Severe persistent asthma, uncomplicated',
+  'J45.909':'Unspecified asthma, uncomplicated',
+  'N18.1':'Chronic kidney disease, stage 1',
+  'N18.2':'Chronic kidney disease, stage 2',
+  'N18.3':'Chronic kidney disease, stage 3 (stage 3a/3b)',
+  'N18.4':'Chronic kidney disease, stage 4',
+  'N18.5':'Chronic kidney disease, stage 5',
+  'N18.6':'End stage renal disease',
+  'N18.9':'Chronic kidney disease, unspecified',
+  'E03.9':'Hypothyroidism, unspecified',
+  'E05.90':'Thyrotoxicosis, unspecified without thyrotoxic crisis',
+  'E66.01':'Morbid (severe) obesity due to excess calories',
+  'E66.09':'Other obesity due to excess calories',
+  'E66.1':'Drug-induced obesity',
+  'E66.9':'Obesity, unspecified',
+  'E78.00':'Pure hypercholesterolemia, unspecified',
+  'E78.1':'Pure hypertriglyceridemia',
+  'E78.2':'Mixed hyperlipidemia',
+  'E78.5':'Dyslipidemia, unspecified',
+  'F32.0':'Major depressive disorder, single episode, mild',
+  'F32.1':'Major depressive disorder, single episode, moderate',
+  'F32.9':'Major depressive disorder, single episode, unspecified',
+  'F33.0':'Major depressive disorder, recurrent, mild',
+  'F33.1':'Major depressive disorder, recurrent, moderate',
+  'F41.1':'Generalized anxiety disorder',
+  'F41.9':'Anxiety disorder, unspecified',
+  'G20':'Parkinson disease',
+  'G30.9':'Alzheimer disease, unspecified',
+  'G43.909':'Migraine, unspecified, not intractable, without status migrainosus',
+  'G47.33':'Obstructive sleep apnea',
+  'G89.29':'Other chronic pain',
+  'K21.0':'GERD with esophagitis',
+  'K21.9':'GERD without esophagitis',
+  'K58.9':'Irritable bowel syndrome without diarrhea',
+  'K76.0':'Fatty (change of) liver, not elsewhere classified',
+  'M06.9':'Rheumatoid arthritis, unspecified',
+  'M17.9':'Osteoarthritis of knee, unspecified',
+  'M19.90':'Unspecified osteoarthritis, unspecified site',
+  'M54.5':'Low back pain',
+  'M81.0':'Age-related osteoporosis without current pathological fracture',
+  'R73.03':'Prediabetes',
+  'Z79.4':'Long term (current) use of insulin',
+  'Z79.84':'Long term (current) use of oral hypoglycemic drugs',
+  'Z87.891':'Personal history of nicotine dependence',
+  'Z96.1':'Presence of intraocular lens',
+};
+
+function searchICD10Codes(query) {
+  if (!query || query.length < 2) return [];
+  const q = query.toLowerCase();
+  const results = [];
+  for (const [code, desc] of Object.entries(ICD10_COMMON)) {
+    if (code.toLowerCase().includes(q) || desc.toLowerCase().includes(q)) {
+      results.push({ code, desc });
+    }
+    if (results.length >= 10) break;
+  }
+  return results;
+}
+
+function renderICD10Field(containerId, inputId, existingCodes) {
+  const codes = (existingCodes || '').split(',').map(c => c.trim()).filter(Boolean);
+  const container = document.getElementById(containerId);
+  if (!container) return;
+
+  const tagsHtml = codes.map(code => {
+    const desc = ICD10_COMMON[code] || '';
+    return '<span class="icd-tag">' + escapeHtml(code) + (desc ? ' <span class="icd-desc">- ' + escapeHtml(desc) + '</span>' : '') + '<span class="icd-remove" onclick="removeICD10Tag(this,\'' + inputId + '\')">&times;</span></span>';
+  }).join('');
+
+  container.innerHTML =
+    '<div id="' + inputId + '_tags" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;">' + tagsHtml + '</div>' +
+    '<div class="icd-search-wrapper">' +
+      '<input type="text" id="' + inputId + '_search" placeholder="Search by ICD-10 code or description..." autocomplete="off" oninput="onICD10Search(this,\'' + inputId + '\')" onfocus="onICD10Search(this,\'' + inputId + '\')">' +
+      '<div class="icd-dropdown" id="' + inputId + '_dropdown"></div>' +
+    '</div>' +
+    '<input type="hidden" id="' + inputId + '" value="' + escapeHtml(existingCodes || '') + '">';
+
+  // Close dropdown on outside click
+  document.addEventListener('click', function handler(e) {
+    const wrapper = container.querySelector('.icd-search-wrapper');
+    if (wrapper && !wrapper.contains(e.target)) {
+      const dd = document.getElementById(inputId + '_dropdown');
+      if (dd) dd.classList.remove('show');
+    }
+  });
+}
+
+function onICD10Search(input, inputId) {
+  const query = input.value.trim();
+  const dropdown = document.getElementById(inputId + '_dropdown');
+  if (!dropdown) return;
+
+  if (query.length < 2) { dropdown.classList.remove('show'); return; }
+
+  const results = searchICD10Codes(query);
+  if (results.length === 0) {
+    dropdown.innerHTML = '<div class="icd-option" style="color:var(--text-muted);cursor:default;">No matches. Type a code manually and press Enter.</div>';
+    dropdown.classList.add('show');
+  } else {
+    dropdown.innerHTML = results.map(r =>
+      '<div class="icd-option" onclick="addICD10Code(\'' + r.code + '\',\'' + inputId + '\')">' +
+        '<span class="icd-code-label">' + escapeHtml(r.code) + '</span>' +
+        escapeHtml(r.desc) +
+      '</div>'
+    ).join('');
+    dropdown.classList.add('show');
+  }
+
+  // Allow manual entry on Enter
+  input.onkeydown = function(e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const val = input.value.trim().toUpperCase();
+      if (val) addICD10Code(val, inputId);
+    }
+  };
+}
+
+function addICD10Code(code, inputId) {
+  const hidden = document.getElementById(inputId);
+  const tagsDiv = document.getElementById(inputId + '_tags');
+  const searchInput = document.getElementById(inputId + '_search');
+  const dropdown = document.getElementById(inputId + '_dropdown');
+  if (!hidden || !tagsDiv) return;
+
+  const existing = hidden.value ? hidden.value.split(',').map(c => c.trim()).filter(Boolean) : [];
+  if (existing.includes(code)) {
+    if (searchInput) searchInput.value = '';
+    if (dropdown) dropdown.classList.remove('show');
+    return;
+  }
+
+  existing.push(code);
+  hidden.value = existing.join(', ');
+
+  const desc = ICD10_COMMON[code] || '';
+  const tag = document.createElement('span');
+  tag.className = 'icd-tag';
+  tag.innerHTML = escapeHtml(code) + (desc ? ' <span class="icd-desc">- ' + escapeHtml(desc) + '</span>' : '') + '<span class="icd-remove" onclick="removeICD10Tag(this,\'' + inputId + '\')">&times;</span>';
+  tagsDiv.appendChild(tag);
+
+  if (searchInput) searchInput.value = '';
+  if (dropdown) dropdown.classList.remove('show');
+}
+
+function removeICD10Tag(el, inputId) {
+  const tag = el.parentElement;
+  const code = tag.textContent.split(' ')[0].trim().replace('×','');
+  const hidden = document.getElementById(inputId);
+  if (hidden) {
+    const codes = hidden.value.split(',').map(c => c.trim()).filter(c => c && c !== code);
+    hidden.value = codes.join(', ');
+  }
+  tag.remove();
+}
+
+function getICD10Display(icd10Str) {
+  if (!icd10Str) return 'N/A';
+  const codes = icd10Str.split(',').map(c => c.trim()).filter(Boolean);
+  return codes.map(code => {
+    const desc = ICD10_COMMON[code] || '';
+    return '<span class="icd-tag">' + escapeHtml(code) + (desc ? ' <span class="icd-desc">- ' + escapeHtml(desc) + '</span>' : '') + '</span>';
+  }).join(' ');
+}
+
 // ==================== AI CARE PLAN GENERATION ====================
 function saveGeminiKey(key) {
   localStorage.setItem('gemini_api_key', key.trim());
@@ -2244,15 +2819,172 @@ function buildCarePlanPrompt(patient) {
   return 'You are an expert clinical documentation specialist for Medicare Chronic Care Management (CCM) and Remote Patient Monitoring (RPM) programs. Generate a comprehensive, individualized care plan.\n\nPATIENT INFORMATION:\n- Name: ' + patient.name + '\n- DOB: ' + (patient.dob || 'Not provided') + '\n- Program: ' + program + (isComplex ? ' (Complex — 99487/99489)' : '') + '\n- Diagnoses: ' + (diagnoses || 'Not specified') + '\n- ICD-10 Codes: ' + (icd10 || 'Not specified') + '\n- Insurance: ' + (patient.insurance || 'Not specified') + '\n- Current Month Minutes: ' + totalMins.toFixed(1) + '\n- Recent Activities: ' + (activities.join(', ') || 'None logged yet') + '\n\nREQUIREMENTS — Follow CMS/Medicare CCM guidelines strictly:\n\n1. PROBLEM LIST: List each diagnosis with its ICD-10 code. For each:\n   - Current status and clinical goals\n   - Measurable, time-bound objectives (SMART goals)\n   - Specific interventions (medications, monitoring, education)\n   - Expected outcomes\n\n2. MEDICATION MANAGEMENT:\n   - Medication reconciliation notes\n   - Adherence monitoring plan\n   - Drug interaction considerations\n   - Refill coordination plan\n\n3. CARE COORDINATION:\n   - Specialist referrals and follow-up schedule\n   - Lab/diagnostic monitoring schedule\n   - Communication plan (patient, caregivers, providers)\n   - Transitions of care protocols\n\n4. PATIENT EDUCATION & SELF-MANAGEMENT:\n   - Disease-specific education topics\n   - Diet and nutrition guidance per diagnosis\n   - Exercise/activity recommendations\n   - Warning signs requiring immediate medical attention (red flags)\n   - Self-monitoring instructions\n\n5. PREVENTIVE CARE:\n   - Age-appropriate screenings due\n   - Vaccination status review\n   - Fall risk assessment (if applicable)\n   - Mental health screening\n\n' + (program === 'RPM' || program === 'Both' ? '6. RPM MONITORING PLAN:\n   - Devices to be used (BP cuff, glucose monitor, pulse ox, weight scale)\n   - Monitoring frequency and schedule\n   - Alert thresholds for each vital sign\n   - Escalation protocol for abnormal readings\n   - Patient device education plan\n\n' : '') + '7. EMERGENCY/URGENT CARE PLAN:\n   - When to call provider vs. go to ER\n   - Emergency contact information section\n   - Advance directive status\n\n8. FOLLOW-UP SCHEDULE:\n   - Next provider visit\n   - Monthly CCM check-in schedule\n   - Anticipated care plan review date\n\nFORMAT: Use clear headers, bullet points, and organized sections. Include specific ICD-10 codes next to each problem. Make it clinically thorough but readable. This must meet Medicare documentation requirements for ' + (isComplex ? 'complex ' : '') + 'CCM billing (CPT ' + (isComplex ? '99487/99489' : '99490/99491') + ').\n\nDo NOT include placeholder text like "[insert here]" — generate realistic, clinically appropriate content based on the diagnoses and ICD-10 codes provided. If ICD-10 codes are not specified but diagnoses are, infer the most appropriate codes.';
 }
 
+// ==================== ICD-10 LOOKUP ====================
+let selectedICD10 = [];
+let icd10DropdownIndex = -1;
+
+function searchICD10(query) {
+  const dropdown = document.getElementById('icd10Dropdown');
+  if (!query || query.length < 2) { dropdown.style.display = 'none'; return; }
+  const q = query.toLowerCase();
+  const matches = ICD10_DATABASE.filter(item =>
+    item.code.toLowerCase().includes(q) || item.desc.toLowerCase().includes(q)
+  ).slice(0, 10);
+  if (matches.length === 0) {
+    dropdown.innerHTML = '<div class="icd10-option" style="padding:10px 12px;cursor:pointer;font-size:13px;color:var(--text-secondary);" onclick="addCustomICD10()">Press Enter to add \u201c' + escapeHtml(query.toUpperCase()) + '\u201d as custom code</div>';
+    dropdown.style.display = 'block';
+    icd10DropdownIndex = -1;
+    return;
+  }
+  dropdown.innerHTML = matches.map(function(item, i) {
+    return '<div class="icd10-option" style="padding:10px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border);transition:background 0.1s;" onmouseenter="this.style.background=\'var(--bg-hover)\'" onmouseleave="this.style.background=\'none\'" onclick="selectICD10(\'' + item.code + '\',\'' + escapeHtml(item.desc).replace(/'/g, "\\'") + '\')">' +
+    '<span style="font-weight:600;color:var(--accent);margin-right:8px;">' + item.code + '</span>' +
+    '<span style="color:var(--text-primary);">' + escapeHtml(item.desc) + '</span></div>';
+  }).join('');
+  dropdown.style.display = 'block';
+  icd10DropdownIndex = -1;
+}
+
+function selectICD10(code, desc) {
+  if (selectedICD10.find(x => x.code === code)) return;
+  selectedICD10.push({ code: code, desc: desc });
+  renderICD10Tags();
+  document.getElementById('icd10Search').value = '';
+  document.getElementById('icd10Dropdown').style.display = 'none';
+}
+
+function addCustomICD10() {
+  const input = document.getElementById('icd10Search');
+  const code = input.value.trim().toUpperCase();
+  if (!code) return;
+  if (selectedICD10.find(x => x.code === code)) return;
+  const found = ICD10_DATABASE.find(x => x.code === code);
+  selectedICD10.push({ code: code, desc: found ? found.desc : 'Custom diagnosis' });
+  renderICD10Tags();
+  input.value = '';
+  document.getElementById('icd10Dropdown').style.display = 'none';
+}
+
+function removeICD10(code) {
+  selectedICD10 = selectedICD10.filter(x => x.code !== code);
+  renderICD10Tags();
+}
+
+function renderICD10Tags() {
+  const container = document.getElementById('icd10Tags');
+  if (!container) return;
+  container.innerHTML = selectedICD10.map(function(item) {
+    return '<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:var(--accent-dim);border:1px solid var(--accent);border-radius:20px;font-size:12px;">' +
+    '<strong style="color:var(--accent);">' + item.code + '</strong>' +
+    '<span style="color:var(--text-secondary);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + escapeHtml(item.desc) + '</span>' +
+    '<button onclick="removeICD10(\'' + item.code + '\')" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px;padding:0 2px;line-height:1;">&times;</button></span>';
+  }).join('');
+}
+
+function handleICD10Key(event) {
+  if (event.key === 'Enter') {
+    event.preventDefault();
+    const dropdown = document.getElementById('icd10Dropdown');
+    const options = dropdown.querySelectorAll('.icd10-option');
+    if (options.length === 1) { options[0].click(); }
+    else if (icd10DropdownIndex >= 0 && options[icd10DropdownIndex]) { options[icd10DropdownIndex].click(); }
+    else { addCustomICD10(); }
+  } else if (event.key === 'ArrowDown') {
+    event.preventDefault();
+    const options = document.getElementById('icd10Dropdown').querySelectorAll('.icd10-option');
+    icd10DropdownIndex = Math.min(icd10DropdownIndex + 1, options.length - 1);
+    options.forEach(function(o, i) { o.style.background = i === icd10DropdownIndex ? 'var(--bg-hover)' : 'none'; });
+  } else if (event.key === 'ArrowUp') {
+    event.preventDefault();
+    icd10DropdownIndex = Math.max(icd10DropdownIndex - 1, 0);
+    const options = document.getElementById('icd10Dropdown').querySelectorAll('.icd10-option');
+    options.forEach(function(o, i) { o.style.background = i === icd10DropdownIndex ? 'var(--bg-hover)' : 'none'; });
+  }
+}
+
+function getICD10String() {
+  return selectedICD10.map(x => x.code).join(', ');
+}
+
+function getDiagnosesString() {
+  return selectedICD10.map(x => x.code + ' - ' + x.desc).join(', ');
+}
+
+function loadICD10FromPatient(patient) {
+  selectedICD10 = [];
+  if (patient.icd10) {
+    const codes = patient.icd10.split(',').map(c => c.trim()).filter(Boolean);
+    codes.forEach(function(code) {
+      const found = ICD10_DATABASE.find(x => x.code === code);
+      selectedICD10.push({ code: code, desc: found ? found.desc : (patient.diagnoses || 'Custom diagnosis') });
+    });
+  }
+  renderICD10Tags();
+}
+
 // ==================== INIT ====================
 function init() {
   initMonthSelector();
+  initMobileMonthSelector();
   seedDemoData();
   refreshProviderSelectors();
   renderDashboard();
 
   // Listen for provider/month changes
-  document.getElementById('activeProvider').addEventListener('change', renderCurrentView);
+  document.getElementById('activeProvider').addEventListener('change', function() {
+    const val = this.value;
+    document.getElementById('mobileProvider').value = val;
+    renderCurrentView();
+  });
+
+  // Mobile provider sync
+  document.getElementById('mobileProvider').addEventListener('change', function() {
+    document.getElementById('activeProvider').value = this.value;
+    renderCurrentView();
+  });
+
+  // Mobile month sync
+  document.getElementById('mobileMonth').addEventListener('change', function() {
+    document.getElementById('monthSelect').value = this.value;
+    renderCurrentView();
+  });
+  document.getElementById('monthSelect').addEventListener('change', function() {
+    const mm = document.getElementById('mobileMonth');
+    if (mm) mm.value = this.value;
+  });
+
+  // Bottom nav
+  document.getElementById('bottomNav').addEventListener('click', function(e) {
+    const btn = e.target.closest('.nav-item');
+    if (!btn) return;
+    const view = btn.dataset.view;
+    if (view) switchView(view);
+  });
+
+  // Close ICD-10 dropdown on click outside
+  document.addEventListener('click', function(e) {
+    if (!e.target.closest('#icd10Search') && !e.target.closest('#icd10Dropdown')) {
+      const dd = document.getElementById('icd10Dropdown');
+      if (dd) dd.style.display = 'none';
+    }
+  });
+}
+
+function initMobileMonthSelector() {
+  const sel = document.getElementById('mobileMonth');
+  if (!sel) return;
+  const now = new Date();
+  sel.innerHTML = '';
+  for (let i = -2; i <= 2; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+    const val = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+    const label = d.toLocaleString('default', { month: 'long', year: 'numeric' });
+    const opt = document.createElement('option');
+    opt.value = val;
+    opt.textContent = label;
+    if (i === 0) opt.selected = true;
+    sel.appendChild(opt);
+  }
 }
 
 init();
