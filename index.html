@@ -1595,7 +1595,7 @@ function renderPatientChart(patientId) {
                 ${(e.activities||[]).map(a => `<span class="activity-tag">${escapeHtml(a)}</span>`).join('')}
               </div>
               ${e.notes ? `<div class="time-entry-notes">${escapeHtml(e.notes)}</div>` : ''}
-              <div class="time-entry-provider">Logged by: ${escapeHtml(e.provider || 'Unknown')}</div>
+              <div class="time-entry-provider">Logged by: ${escapeHtml(e.provider || 'Unknown')}${e.initials ? ' (' + escapeHtml(e.initials) + ')' : ''}</div>
             </div>
           `).join('')
         }
@@ -1867,6 +1867,10 @@ function showSaveTimerModal(patientId, minutes) {
             </select>
           </div>
           <div class="form-row">
+            <label>Initials *</label>
+            <input type="text" id="saveEntryInitials" placeholder="e.g., WM, AF" maxlength="5" style="text-transform:uppercase;" value="${localStorage.getItem('ccm_last_initials') || ''}">
+          </div>
+          <div class="form-row">
             <label>Minutes (adjust if needed)</label>
             <input type="number" id="saveEntryMinutes" value="${minutes.toFixed(1)}" step="0.1" min="0">
           </div>
@@ -1905,11 +1909,16 @@ function saveTimerEntry(patientId) {
   const date = document.getElementById('saveEntryDate').value;
   const program = document.getElementById('saveEntryProgram').value;
   const provider = document.getElementById('saveEntryProvider').value;
+  const initials = (document.getElementById('saveEntryInitials').value || '').trim().toUpperCase();
   const minutes = parseFloat(document.getElementById('saveEntryMinutes').value) || 0;
   const notes = document.getElementById('saveEntryNotes').value.trim();
   const activities = Array.from(document.querySelectorAll('.save-activity:checked')).map(c => c.value);
 
   if (minutes <= 0) { alert('Please enter valid minutes.'); return; }
+  if (!initials) { alert('Please enter your initials.'); return; }
+
+  // Remember initials for next time
+  localStorage.setItem('ccm_last_initials', initials);
 
   const month = date.substring(0, 7);
 
@@ -1920,6 +1929,7 @@ function saveTimerEntry(patientId) {
     month,
     program,
     provider,
+    initials,
     minutes,
     activities,
     notes,
@@ -1967,6 +1977,10 @@ function showLogTimeModal(patientId) {
               ${data.providers.map(pr => `<option value="${pr}" ${pr === activeProvider ? 'selected' : ''}>${pr}</option>`).join('')}
             </select>
           </div>
+          <div class="form-row">
+            <label>Initials *</label>
+            <input type="text" id="logEntryInitials" placeholder="e.g., WM, AF" maxlength="5" style="text-transform:uppercase;" value="${localStorage.getItem('ccm_last_initials') || ''}">
+          </div>
         </div>
 
         <div style="margin-bottom:12px;">
@@ -2002,11 +2016,15 @@ function saveLogEntry(patientId) {
   const date = document.getElementById('logEntryDate').value;
   const program = document.getElementById('logEntryProgram').value;
   const provider = document.getElementById('logEntryProvider').value;
+  const initials = (document.getElementById('logEntryInitials').value || '').trim().toUpperCase();
   const minutes = parseFloat(document.getElementById('logEntryMinutes').value) || 0;
   const notes = document.getElementById('logEntryNotes').value.trim();
   const activities = Array.from(document.querySelectorAll('.log-activity:checked')).map(c => c.value);
 
   if (minutes <= 0) { alert('Please enter valid minutes.'); return; }
+  if (!initials) { alert('Please enter your initials.'); return; }
+
+  localStorage.setItem('ccm_last_initials', initials);
 
   const month = date.substring(0, 7);
 
@@ -2017,6 +2035,7 @@ function saveLogEntry(patientId) {
     month,
     program,
     provider,
+    initials,
     minutes,
     activities,
     notes,
@@ -2263,7 +2282,7 @@ function removeLocation(name) {
 // ==================== CSV EXPORT ====================
 function exportCSV() {
   const month = getCurrentMonth();
-  const rows = [['Patient Name', 'DOB', 'Program', 'Provider', 'Location', 'Insurance', 'Total Minutes', 'Status', 'Date', 'Entry Minutes', 'Entry Provider', 'Activities', 'Notes']];
+  const rows = [['Patient Name', 'DOB', 'Program', 'Provider', 'Location', 'Insurance', 'Total Minutes', 'Status', 'Date', 'Entry Minutes', 'Entry Provider', 'Initials', 'Activities', 'Notes']];
 
   data.patients.forEach(p => {
     const entries = data.timeEntries.filter(e => e.patientId === p.id && e.month === month);
@@ -2274,7 +2293,7 @@ function exportCSV() {
       rows.push([p.name, p.dob || '', p.program, p.provider || '', p.location || '', p.insurance || '', '0', tier.label, '', '', '', '', '']);
     } else {
       entries.forEach(e => {
-        rows.push([p.name, p.dob || '', p.program, p.provider || '', p.location || '', p.insurance || '', totalMins.toFixed(1), tier.label, e.date, e.minutes.toFixed(1), e.provider || '', (e.activities || []).join('; '), e.notes || '']);
+        rows.push([p.name, p.dob || '', p.program, p.provider || '', p.location || '', p.insurance || '', totalMins.toFixed(1), tier.label, e.date, e.minutes.toFixed(1), e.provider || '', e.initials || '', (e.activities || []).join('; '), e.notes || '']);
       });
     }
   });
