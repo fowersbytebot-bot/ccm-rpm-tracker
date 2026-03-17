@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>CCM/RPM Minute Tracker</title>
 <style>
 :root {
@@ -1611,7 +1614,7 @@ function renderPatientChart(patientId) {
                 🤖 Generate with AI
               </button>
             ` : `
-              <span style="font-size:12px;color:var(--text-muted);">Add Gemini API key in Settings to enable AI</span>
+              <span style="font-size:12px;color:var(--text-muted);">Add Gemini API key in <a href="#" onclick="event.preventDefault();switchView('settings')" style="color:var(--accent);text-decoration:underline;">Settings</a> to enable AI</span>
             `}
             ${hasCarePlan ? `<button class="btn btn-secondary btn-sm" onclick="toggleCarePlanEdit('${p.id}')" id="editCarePlanBtn">✏️ Edit</button>` : ''}
             <button class="btn btn-secondary btn-sm" onclick="printCarePlan()">🖨️ Print</button>
