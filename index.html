@@ -505,13 +505,13 @@ tr { cursor: pointer; transition: background var(--transition); }
   .grid-4, .grid-3, .grid-2 { grid-template-columns: 1fr; }
   header { padding: 8px 12px; }
   header nav { display: none; }
-  .header-right { gap: 6px; flex-wrap: wrap; }
-  .header-right .btn { padding: 8px 10px; font-size: 12px; }
+  .header-right { display: none !important; }
+  .mobile-actions { display: flex !important; flex-wrap: wrap; gap: 8px; padding: 8px 12px; background: var(--bg-secondary); border-bottom: 1px solid var(--border); }
   main { padding: 12px; padding-bottom: 80px; }
   .timer-bar { flex-wrap: wrap; gap: 8px; padding: 8px 12px; top: auto; bottom: 60px; position: fixed; left: 0; right: 0; z-index: 150; border-top: 2px solid var(--accent); border-bottom: none; }
   .timer-display { font-size: 28px; }
   .checkbox-grid { grid-template-columns: 1fr; }
-  .mobile-bottom-nav { display: flex; }
+  .mobile-bottom-nav { display: flex !important; }
   .table-wrap { display: none; }
   .patient-card-list { display: block; }
   .modal { max-width: 100%; margin: 10px; padding: 16px; max-height: 95vh; }
@@ -936,15 +936,6 @@ tr { cursor: pointer; transition: background var(--transition); }
       </div>
     </div>
   </main>
-
-  <div class="bottom-nav" id="bottomNav">
-    <div class="nav-items">
-      <button class="nav-item active" data-view="dashboard"><span class="nav-icon">📊</span>Dashboard</button>
-      <button class="nav-item" data-view="patients"><span class="nav-icon">👥</span>Patients</button>
-      <button class="nav-item" data-view="providers"><span class="nav-icon">👨‍⚕️</span>Providers</button>
-      <button class="nav-item" data-view="settings"><span class="nav-icon">⚙️</span>Settings</button>
-    </div>
-  </div>
 </div>
 
 <!-- Mobile Bottom Nav -->
@@ -1182,7 +1173,7 @@ function switchView(view) {
   currentView = view;
   document.querySelectorAll('#mainNav button').forEach(b => b.classList.toggle('active', b.dataset.view === view));
   document.querySelectorAll('#mobileNav button').forEach(b => b.classList.toggle('active', b.dataset.view === view));
-  document.querySelectorAll('#bottomNav .nav-item').forEach(b => {
+  document.querySelectorAll('#mobileNav button').forEach(b => {
     const bv = b.dataset.view;
     b.classList.toggle('active', bv === view || (view === 'patientChart' && bv === 'patients'));
   });
@@ -2820,13 +2811,7 @@ function init() {
     if (mm) mm.value = this.value;
   });
 
-  // Bottom nav
-  document.getElementById('bottomNav').addEventListener('click', function(e) {
-    const btn = e.target.closest('.nav-item');
-    if (!btn) return;
-    const view = btn.dataset.view;
-    if (view) switchView(view);
-  });
+  // Bottom nav handled by mobileNav onclick handlers directly
 
   // Close ICD-10 dropdown on click outside
   document.addEventListener('click', function(e) {
