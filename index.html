@@ -1609,11 +1609,12 @@ function renderPatientChart(patientId) {
     `;
   } else if (chartTab === 'careplan') {
     const hasApiKey = !!localStorage.getItem('gemini_api_key');
+    const hasCarePlan = !!(p.carePlan && p.carePlan.trim());
     tabContent.innerHTML = `
       <div class="card">
-        <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+        <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
           <h3>📋 Care Plan</h3>
-          <div style="display:flex;gap:8px;">
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
             ${hasApiKey ? `
               <button class="btn btn-primary btn-sm" onclick="generateCarePlan('${p.id}')" id="genCarePlanBtn">
                 🤖 Generate with AI
@@ -1621,12 +1622,19 @@ function renderPatientChart(patientId) {
             ` : `
               <span style="font-size:12px;color:var(--text-muted);">Add Gemini API key in Settings to enable AI</span>
             `}
-            <button class="btn btn-secondary btn-sm" onclick="saveCarePlan('${p.id}')">💾 Save</button>
+            ${hasCarePlan ? `<button class="btn btn-secondary btn-sm" onclick="toggleCarePlanEdit('${p.id}')" id="editCarePlanBtn">✏️ Edit</button>` : ''}
+            <button class="btn btn-secondary btn-sm" onclick="printCarePlan()">🖨️ Print</button>
           </div>
         </div>
         <div id="carePlanStatus" style="display:none;padding:12px;margin-bottom:12px;border-radius:var(--radius);font-size:13px;"></div>
         ${!p.icd10 && hasApiKey ? `<div style="padding:8px 12px;background:var(--yellow-bg);border:1px solid rgba(234,179,8,0.3);border-radius:var(--radius);margin-bottom:12px;font-size:13px;color:var(--yellow);">⚠️ Add ICD-10 codes to this patient for better AI care plans. <a href="#" onclick="event.preventDefault();showEditPatient('${p.id}')" style="color:var(--accent);">Edit Patient</a></div>` : ''}
-        <textarea id="carePlanText" style="min-height:400px;font-family:monospace;font-size:13px;line-height:1.6;" placeholder="Click Generate with AI to create a Medicare-compliant care plan, or type manually...">${escapeHtml(p.carePlan || '')}</textarea>
+        <div id="carePlanDisplay" style="${hasCarePlan ? '' : 'display:none;'}padding:16px;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:var(--radius);font-size:13px;line-height:1.8;white-space:pre-wrap;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">${hasCarePlan ? formatCarePlanHTML(p.carePlan) : ''}</div>
+        <div id="carePlanEditWrap" style="${hasCarePlan ? 'display:none;' : ''}">
+          <textarea id="carePlanText" style="min-height:400px;font-size:13px;line-height:1.6;" placeholder="Click 'Generate with AI' to create a Medicare-compliant care plan, or type manually...">${escapeHtml(p.carePlan || '')}</textarea>
+          <div style="margin-top:8px;">
+            <button class="btn btn-success btn-sm" onclick="saveCarePlan('${p.id}')">💾 Save Care Plan</button>
+          </div>
+        </div>
       </div>
     `;
   } else if (chartTab === 'readings') {
@@ -1668,6 +1676,54 @@ function saveCarePlan(patientId) {
   if (!p) return;
   p.carePlan = document.getElementById('carePlanText').value;
   saveData();
+  renderPatientChart(patientId);
+}
+
+function formatCarePlanHTML(text) {
+  if (!text) return '';
+  // Convert markdown-style to clean HTML
+  let html = escapeHtml(text);
+  // Bold: **text** or __text__
+  html = html.replace(/\*\*(.+?)\*\*/g, '<strong style="color:var(--text-primary);">$1</strong>');
+  html = html.replace(/__(.+?)__/g, '<strong style="color:var(--text-primary);">$1</strong>');
+  // Headers: lines starting with # ## ###
+  html = html.replace(/^### (.+)$/gm, '<div style="font-size:14px;font-weight:700;color:var(--accent);margin:16px 0 6px 0;border-bottom:1px solid var(--border);padding-bottom:4px;">$1</div>');
+  html = html.replace(/^## (.+)$/gm, '<div style="font-size:15px;font-weight:700;color:var(--accent);margin:20px 0 8px 0;border-bottom:1px solid var(--border);padding-bottom:4px;">$1</div>');
+  html = html.replace(/^# (.+)$/gm, '<div style="font-size:17px;font-weight:700;color:var(--accent);margin:20px 0 10px 0;border-bottom:2px solid var(--accent);padding-bottom:6px;">$1</div>');
+  // Numbered section headers (1. PROBLEM LIST:)
+  html = html.replace(/^(\d+)\.\s+([A-Z][A-Z &\/\-]+:?)/gm, '<div style="font-size:14px;font-weight:700;color:var(--accent);margin:18px 0 6px 0;">$1. $2</div>');
+  // Bullet points: * or - at start of line
+  html = html.replace(/^[\*\-]\s+/gm, '  • ');
+  // Sub-bullets
+  html = html.replace(/^  [\*\-]\s+/gm, '    ◦ ');
+  return html;
+}
+
+function toggleCarePlanEdit(patientId) {
+  const display = document.getElementById('carePlanDisplay');
+  const editWrap = document.getElementById('carePlanEditWrap');
+  const btn = document.getElementById('editCarePlanBtn');
+  if (!display || !editWrap) return;
+  const isEditing = editWrap.style.display !== 'none';
+  if (isEditing) {
+    // Save and show display
+    saveCarePlan(patientId);
+  } else {
+    display.style.display = 'none';
+    editWrap.style.display = 'block';
+    btn.textContent = '💾 Save';
+  }
+}
+
+function printCarePlan() {
+  const display = document.getElementById('carePlanDisplay');
+  const textarea = document.getElementById('carePlanText');
+  const content = display && display.style.display !== 'none' ? display.innerHTML : (textarea ? escapeHtml(textarea.value) : '');
+  if (!content) { alert('No care plan to print.'); return; }
+  const win = window.open('', '_blank');
+  win.document.write('<html><head><title>Care Plan</title><style>body{font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;padding:40px;line-height:1.8;font-size:13px;color:#222;max-width:800px;margin:0 auto;}strong{font-weight:700;}@media print{body{padding:20px;}}</style></head><body>' + content + '</body></html>');
+  win.document.close();
+  win.print();
 }
 
 function deleteTimeEntry(entryId, patientId) {
@@ -2685,14 +2741,23 @@ async function generateCarePlan(patientId) {
 
     if (!text) throw new Error('No response from AI');
 
-    document.getElementById('carePlanText').value = text;
     p.carePlan = text;
     saveData();
 
-    status.style.background = 'var(--green-bg)';
-    status.style.border = '1px solid rgba(34,197,94,0.3)';
-    status.style.color = 'var(--green)';
-    status.textContent = '✅ Care plan generated and saved. Review and edit as needed.';
+    // Re-render to show formatted display
+    renderPatientChart(p.id);
+
+    // Show success status after re-render
+    setTimeout(() => {
+      const st = document.getElementById('carePlanStatus');
+      if (st) {
+        st.style.display = 'block';
+        st.style.background = 'var(--green-bg)';
+        st.style.border = '1px solid rgba(34,197,94,0.3)';
+        st.style.color = 'var(--green)';
+        st.textContent = '✅ Care plan generated and saved. Review and edit as needed.';
+      }
+    }, 100);
   } catch (err) {
     status.style.background = 'var(--red-bg)';
     status.style.border = '1px solid rgba(239,68,68,0.3)';
@@ -2715,7 +2780,13 @@ function buildCarePlanPrompt(patient) {
   const totalMins = entries.reduce((s, e) => s + e.minutes, 0);
   const activities = [...new Set(entries.flatMap(e => e.activities || []))];
 
-  return 'You are an expert clinical documentation specialist for Medicare Chronic Care Management (CCM) and Remote Patient Monitoring (RPM) programs. Generate a comprehensive, individualized care plan.\n\nPATIENT INFORMATION:\n- Name: ' + patient.name + '\n- DOB: ' + (patient.dob || 'Not provided') + '\n- Program: ' + program + (isComplex ? ' (Complex — 99487/99489)' : '') + '\n- Diagnoses: ' + (diagnoses || 'Not specified') + '\n- ICD-10 Codes: ' + (icd10 || 'Not specified') + '\n- Insurance: ' + (patient.insurance || 'Not specified') + '\n- Current Month Minutes: ' + totalMins.toFixed(1) + '\n- Recent Activities: ' + (activities.join(', ') || 'None logged yet') + '\n\nREQUIREMENTS — Follow CMS/Medicare CCM guidelines strictly:\n\n1. PROBLEM LIST: List each diagnosis with its ICD-10 code. For each:\n   - Current status and clinical goals\n   - Measurable, time-bound objectives (SMART goals)\n   - Specific interventions (medications, monitoring, education)\n   - Expected outcomes\n\n2. MEDICATION MANAGEMENT:\n   - Medication reconciliation notes\n   - Adherence monitoring plan\n   - Drug interaction considerations\n   - Refill coordination plan\n\n3. CARE COORDINATION:\n   - Specialist referrals and follow-up schedule\n   - Lab/diagnostic monitoring schedule\n   - Communication plan (patient, caregivers, providers)\n   - Transitions of care protocols\n\n4. PATIENT EDUCATION & SELF-MANAGEMENT:\n   - Disease-specific education topics\n   - Diet and nutrition guidance per diagnosis\n   - Exercise/activity recommendations\n   - Warning signs requiring immediate medical attention (red flags)\n   - Self-monitoring instructions\n\n5. PREVENTIVE CARE:\n   - Age-appropriate screenings due\n   - Vaccination status review\n   - Fall risk assessment (if applicable)\n   - Mental health screening\n\n' + (program === 'RPM' || program === 'Both' ? '6. RPM MONITORING PLAN:\n   - Devices to be used (BP cuff, glucose monitor, pulse ox, weight scale)\n   - Monitoring frequency and schedule\n   - Alert thresholds for each vital sign\n   - Escalation protocol for abnormal readings\n   - Patient device education plan\n\n' : '') + '7. EMERGENCY/URGENT CARE PLAN:\n   - When to call provider vs. go to ER\n   - Emergency contact information section\n   - Advance directive status\n\n8. FOLLOW-UP SCHEDULE:\n   - Next provider visit\n   - Monthly CCM check-in schedule\n   - Anticipated care plan review date\n\nFORMAT: Use clear headers, bullet points, and organized sections. Include specific ICD-10 codes next to each problem. Make it clinically thorough but readable. This must meet Medicare documentation requirements for ' + (isComplex ? 'complex ' : '') + 'CCM billing (CPT ' + (isComplex ? '99487/99489' : '99490/99491') + ').\n\nDo NOT include placeholder text like "[insert here]" — generate realistic, clinically appropriate content based on the diagnoses and ICD-10 codes provided. If ICD-10 codes are not specified but diagnoses are, infer the most appropriate codes.';
+  // For "Both" patients, filter to CCM-only diagnoses (exclude RPM-specific)
+  var ccmNote = '';
+  if (program === 'Both') {
+    ccmNote = '\n\nIMPORTANT: This patient is enrolled in BOTH CCM and RPM. This care plan is for CCM ONLY. Do NOT include RPM-specific monitoring plans, device management, or remote monitoring protocols. Focus exclusively on chronic care management: care coordination, medication management, patient education, and preventive care for the chronic conditions listed.';
+  }
+
+  return 'You are an expert clinical documentation specialist for Medicare Chronic Care Management (CCM). Generate a professional, individualized CCM care plan formatted exactly as Medicare expects for audits and billing compliance.\n\nPATIENT INFORMATION:\nPatient Name: ' + patient.name + '\nDate of Birth: ' + (patient.dob || 'Not provided') + '\nDate of Care Plan: ' + new Date().toLocaleDateString('en-US', {month:'long',day:'numeric',year:'numeric'}) + '\nProgram: ' + program + (isComplex ? ' (Complex CCM — CPT 99487/99489)' : ' (CCM — CPT 99490/99491)') + '\nDiagnoses: ' + (diagnoses || 'Not specified') + '\nICD-10 Codes: ' + (icd10 || 'Not specified') + '\nInsurance: ' + (patient.insurance || 'Not specified') + '\nCare Plan Review Period: ' + new Date().toLocaleDateString('en-US',{month:'short',year:'numeric'}) + ' - ' + new Date(Date.now()+90*86400000).toLocaleDateString('en-US',{month:'short',year:'numeric'}) + ccmNote + '\n\nGENERATE THE CARE PLAN WITH THESE EXACT SECTIONS:\n\n1. COMPREHENSIVE PROBLEM LIST\nFor each ICD-10 diagnosis, include:\n   - ICD-10 Code and Description\n   - Current Status (stable, worsening, improving)\n   - Clinical Goals (specific, measurable, time-bound)\n   - Interventions (medications, monitoring frequency, lifestyle modifications)\n   - Expected Outcomes\n\n2. MEDICATION MANAGEMENT\n   - Current medication reconciliation plan\n   - Adherence monitoring strategy\n   - Drug interaction screening notes\n   - Refill coordination with pharmacy\n\n3. CARE COORDINATION\n   - Primary care provider follow-up schedule\n   - Specialist referrals and coordination\n   - Lab and diagnostic test schedule\n   - Communication plan (patient, family, care team)\n\n4. PATIENT/CAREGIVER EDUCATION\n   - Disease-specific education topics\n   - Dietary guidance specific to diagnoses\n   - Physical activity recommendations\n   - Warning signs and red flags requiring immediate attention\n   - Self-management goals\n\n5. PREVENTIVE CARE\n   - Screenings due based on age and diagnoses\n   - Immunization review\n   - Fall risk assessment\n   - Depression/mental health screening\n\n6. EMERGENCY AND URGENT CARE PLAN\n   - When to contact provider\n   - When to go to emergency department\n   - Advance directive status\n\n7. CARE PLAN REVIEW\n   - Next scheduled review date\n   - Monthly CCM contact schedule\n   - Criteria for care plan modification\n\nFORMATTING RULES:\n- Use plain text with clear section headers (ALL CAPS for main sections)\n- Use dashes (-) for bullet points, NOT asterisks\n- Do NOT use markdown formatting (no **, no ##, no *)\n- Write in professional clinical language appropriate for Medicare documentation\n- Include the specific ICD-10 code in parentheses after each diagnosis name\n- Be thorough but concise — this goes in the patient chart\n- Do NOT include placeholder text like [insert here] — generate realistic clinical content\n- This must meet Medicare documentation requirements for ' + (isComplex ? 'complex ' : '') + 'CCM billing\n- If ICD-10 codes are not provided but diagnoses are listed, infer the correct codes';
 }
 
 // ==================== INIT ====================
