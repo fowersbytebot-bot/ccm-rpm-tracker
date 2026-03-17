@@ -1642,7 +1642,7 @@ function renderPatientChart(patientId) {
               <span style="color:var(--text-muted)">Provider:</span><span>${escapeHtml(p.provider || 'N/A')}</span>
               <span style="color:var(--text-muted)">Location:</span><span>${escapeHtml(p.location || 'N/A')}</span>
               <span style="color:var(--text-muted)">Insurance:</span><span>${escapeHtml(p.insurance || 'N/A')}</span>
-              <span style="color:var(--text-muted)">Diagnoses:</span><span>${(p.icd10 || '').split(',').map(c => c.trim()).filter(Boolean).map(code => { const found = ICD10_DATABASE.find(x => x.code === code); return '<span style="display:inline-block;padding:2px 8px;background:var(--accent-dim);border-radius:12px;font-size:12px;margin:2px;"><strong style="color:var(--accent);">' + code + '</strong> ' + (found ? escapeHtml(found.desc) : '') + '</span>'; }).join('') || 'N/A'}</span>
+              <span style="color:var(--text-muted)">ICD-10 Diagnoses:</span><span>${getICD10Display(p.icd10)}</span>
             </div>
           </div>
         </div>
@@ -2071,7 +2071,6 @@ function saveLogEntry(patientId) {
 
 // ==================== ADD / EDIT PATIENT ====================
 function showAddPatient() {
-  selectedICD10 = [];
   document.getElementById('modalContainer').innerHTML = `
     <div class="modal-overlay" onclick="if(event.target===this)closeModal()">
       <div class="modal">
@@ -2133,7 +2132,6 @@ function saveNewPatient() {
 
   saveData();
   closeModal();
-  selectedICD10 = [];
   renderCurrentView();
 }
 
@@ -2174,15 +2172,7 @@ function showEditPatient(patientId) {
           </div>
         </div>
         <div class="form-row"><label>Insurance</label><input type="text" id="ptInsurance" value="${escapeHtml(p.insurance || '')}"></div>
-        <div class="form-row">
-          <label>Diagnoses (ICD-10) *</label>
-          <div id="icd10Tags" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;min-height:32px;"></div>
-          <div style="position:relative;">
-            <input type="text" id="icd10Search" placeholder="Search by code or description (e.g., I10 or hypertension)" autocomplete="off" oninput="searchICD10(this.value)" onkeydown="handleICD10Key(event)">
-            <div id="icd10Dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;max-height:200px;overflow-y:auto;background:var(--bg-secondary);border:1px solid var(--border);border-top:none;border-radius:0 0 var(--radius) var(--radius);z-index:50;"></div>
-          </div>
-          <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Type to search. Press Enter or click to add. Type a custom code if not in list.</div>
-        </div>
+        <div class="form-row"><label>ICD-10 Diagnoses</label><div id="icd10EditContainer"></div></div>
         <div class="modal-actions">
           <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
           <button class="btn btn-success btn-lg" onclick="updatePatient('${p.id}')">Save Changes</button>
@@ -2190,7 +2180,7 @@ function showEditPatient(patientId) {
       </div>
     </div>
   `;
-  loadICD10FromPatient(p);
+  setTimeout(() => renderICD10Field('icd10EditContainer', 'ptICD10', p.icd10 || ''), 50);
 }
 
 function updatePatient(patientId) {
@@ -2206,8 +2196,8 @@ function updatePatient(patientId) {
   p.provider = document.getElementById('ptProvider').value;
   p.location = document.getElementById('ptLocation').value;
   p.insurance = document.getElementById('ptInsurance').value.trim();
-  p.diagnoses = getDiagnosesString();
-  p.icd10 = getICD10String();
+  p.icd10 = document.getElementById('ptICD10').value.trim();
+  p.diagnoses = (p.icd10 || '').split(',').map(c => { const d = ICD10_COMMON[c.trim()]; return d ? d : c.trim(); }).filter(Boolean).join(', ');
 
   saveData();
   closeModal();
