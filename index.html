@@ -718,6 +718,14 @@ tr { cursor: pointer; transition: background var(--transition); }
         </div>
       </div>
       <div class="card" style="margin-top:16px;">
+        <div class="card-header"><h2>AI Care Plans</h2></div>
+        <p style="font-size:13px;color:var(--text-secondary);margin-bottom:12px;">Use Google Gemini AI to generate Medicare-compliant care plans based on ICD-10 codes. Get a free API key at <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--accent);">Google AI Studio</a></p>
+        <div style="display:flex;gap:8px;">
+          <input type="password" id="geminiApiKey" placeholder="Paste Gemini API key" style="flex:1;" onchange="saveGeminiKey(this.value)">
+          <button class="btn btn-secondary btn-sm" onclick="document.getElementById('geminiApiKey').type = document.getElementById('geminiApiKey').type === 'password' ? 'text' : 'password'">Show/Hide</button>
+        </div>
+      </div>
+      <div class="card" style="margin-top:16px;">
         <div class="card-header"><h2>Import Patients from CSV</h2></div>
         <p style="font-size:13px;color:var(--text-secondary);margin-bottom:12px;">CSV columns: name, dob, diagnoses, insurance, provider, location, program (CCM/RPM/Both)</p>
         <div class="drop-zone" id="csvDropZone" onclick="document.getElementById('csvFile').click()" ondragover="event.preventDefault();this.classList.add('dragover')" ondragleave="this.classList.remove('dragover')" ondrop="handleCSVDrop(event)">
@@ -1269,6 +1277,7 @@ function renderPatientChart(patientId) {
               <span style="color:var(--text-muted)">Location:</span><span>${escapeHtml(p.location || 'N/A')}</span>
               <span style="color:var(--text-muted)">Insurance:</span><span>${escapeHtml(p.insurance || 'N/A')}</span>
               <span style="color:var(--text-muted)">Diagnoses:</span><span>${escapeHtml(p.diagnoses || 'N/A')}</span>
+              <span style="color:var(--text-muted)">ICD-10:</span><span>${escapeHtml(p.icd10 || 'N/A')}</span>
             </div>
           </div>
         </div>
@@ -1325,13 +1334,25 @@ function renderPatientChart(patientId) {
       </div>
     `;
   } else if (chartTab === 'careplan') {
+    const hasApiKey = !!localStorage.getItem('gemini_api_key');
     tabContent.innerHTML = `
       <div class="card">
-        <div class="card-header"><h3>Care Plan</h3></div>
-        <textarea id="carePlanText" style="min-height:300px;" placeholder="Enter care plan notes...">${escapeHtml(p.carePlan || '')}</textarea>
-        <div style="margin-top:8px;">
-          <button class="btn btn-primary btn-sm" onclick="saveCarePlan('${p.id}')">Save Care Plan</button>
+        <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+          <h3>📋 Care Plan</h3>
+          <div style="display:flex;gap:8px;">
+            ${hasApiKey ? `
+              <button class="btn btn-primary btn-sm" onclick="generateCarePlan('${p.id}')" id="genCarePlanBtn">
+                🤖 Generate with AI
+              </button>
+            ` : `
+              <span style="font-size:12px;color:var(--text-muted);">Add Gemini API key in Settings to enable AI</span>
+            `}
+            <button class="btn btn-secondary btn-sm" onclick="saveCarePlan('${p.id}')">💾 Save</button>
+          </div>
         </div>
+        <div id="carePlanStatus" style="display:none;padding:12px;margin-bottom:12px;border-radius:var(--radius);font-size:13px;"></div>
+        ${!p.icd10 && hasApiKey ? `<div style="padding:8px 12px;background:var(--yellow-bg);border:1px solid rgba(234,179,8,0.3);border-radius:var(--radius);margin-bottom:12px;font-size:13px;color:var(--yellow);">⚠️ Add ICD-10 codes to this patient for better AI care plans. <a href="#" onclick="event.preventDefault();showEditPatient('${p.id}')" style="color:var(--accent);">Edit Patient</a></div>` : ''}
+        <textarea id="carePlanText" style="min-height:400px;font-family:monospace;font-size:13px;line-height:1.6;" placeholder="Click Generate with AI to create a Medicare-compliant care plan, or type manually...">${escapeHtml(p.carePlan || '')}</textarea>
       </div>
     `;
   } else if (chartTab === 'readings') {
@@ -1715,6 +1736,7 @@ function showAddPatient() {
         </div>
         <div class="form-row"><label>Insurance</label><input type="text" id="ptInsurance" placeholder="Insurance name"></div>
         <div class="form-row"><label>Diagnoses</label><textarea id="ptDiagnoses" rows="2" placeholder="Comma-separated diagnoses"></textarea></div>
+        <div class="form-row"><label>ICD-10 Codes</label><textarea id="ptICD10" rows="2" placeholder="e.g., E11.9, I10, J44.1 (comma-separated)"></textarea></div>
         <div class="modal-actions">
           <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
           <button class="btn btn-success btn-lg" onclick="saveNewPatient()">Add Patient</button>
@@ -1738,6 +1760,7 @@ function saveNewPatient() {
     location: document.getElementById('ptLocation').value,
     insurance: document.getElementById('ptInsurance').value.trim(),
     diagnoses: document.getElementById('ptDiagnoses').value.trim(),
+    icd10: document.getElementById('ptICD10').value.trim(),
     carePlan: '',
     createdAt: new Date().toISOString()
   });
@@ -1785,6 +1808,7 @@ function showEditPatient(patientId) {
         </div>
         <div class="form-row"><label>Insurance</label><input type="text" id="ptInsurance" value="${escapeHtml(p.insurance || '')}"></div>
         <div class="form-row"><label>Diagnoses</label><textarea id="ptDiagnoses" rows="2">${escapeHtml(p.diagnoses || '')}</textarea></div>
+        <div class="form-row"><label>ICD-10 Codes</label><textarea id="ptICD10" rows="2" placeholder="e.g., E11.9, I10, J44.1 (comma-separated)">${escapeHtml(p.icd10 || '')}</textarea></div>
         <div class="modal-actions">
           <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
           <button class="btn btn-success btn-lg" onclick="updatePatient('${p.id}')">Save Changes</button>
@@ -1808,6 +1832,7 @@ function updatePatient(patientId) {
   p.location = document.getElementById('ptLocation').value;
   p.insurance = document.getElementById('ptInsurance').value.trim();
   p.diagnoses = document.getElementById('ptDiagnoses').value.trim();
+  p.icd10 = document.getElementById('ptICD10').value.trim();
 
   saveData();
   closeModal();
@@ -1869,6 +1894,8 @@ function renderSettings() {
       <button class="delete-entry" onclick="removeLocation('${escapeHtml(l)}')">&times;</button>
     </div>`
   ).join('');
+
+  loadGeminiKey();
 }
 
 function addProvider() {
@@ -1982,6 +2009,7 @@ function handleCSVFile(file) {
         name,
         dob,
         diagnoses: obj.diagnoses || obj.diagnosis || '',
+        icd10: obj.icd10 || obj['icd-10'] || obj.icd_10 || '',
         insurance: obj.insurance || '',
         provider: obj.provider || '',
         location: obj.location || '',
@@ -2075,6 +2103,8 @@ function seedDemoData() {
     const numDiag = 2 + Math.floor(Math.random() * 3);
     const patDiag = [];
     for (let d = 0; d < numDiag; d++) patDiag.push(diagnoses[(i + d) % diagnoses.length]);
+    const icdMap = {'HTN':'I10','DM Type 2':'E11.9','CHF':'I50.9','COPD':'J44.1','CKD Stage 3':'N18.3','Afib':'I48.91','Obesity':'E66.01','CAD':'I25.10','Asthma':'J45.20','Hypothyroidism':'E03.9'};
+    const patICD = patDiag.map(d => icdMap[d] || '').filter(Boolean);
 
     data.patients.push({
       id: pid,
@@ -2086,6 +2116,7 @@ function seedDemoData() {
       location,
       insurance: insurances[i % insurances.length],
       diagnoses: patDiag.join(', '),
+      icd10: patICD.join(', '),
       carePlan: '',
       createdAt: new Date().toISOString()
     });
@@ -2121,6 +2152,96 @@ function seedDemoData() {
   }
 
   saveData();
+}
+
+// ==================== AI CARE PLAN GENERATION ====================
+function saveGeminiKey(key) {
+  localStorage.setItem('gemini_api_key', key.trim());
+}
+
+function loadGeminiKey() {
+  const key = localStorage.getItem('gemini_api_key') || '';
+  const el = document.getElementById('geminiApiKey');
+  if (el) el.value = key;
+}
+
+async function generateCarePlan(patientId) {
+  const p = data.patients.find(x => x.id === patientId);
+  if (!p) return;
+
+  const apiKey = localStorage.getItem('gemini_api_key');
+  if (!apiKey) {
+    alert('Please add your Gemini API key in Settings first.');
+    return;
+  }
+
+  const btn = document.getElementById('genCarePlanBtn');
+  const status = document.getElementById('carePlanStatus');
+
+  btn.disabled = true;
+  btn.textContent = '⏳ Generating...';
+  status.style.display = 'block';
+  status.style.background = 'var(--blue-bg)';
+  status.style.border = '1px solid rgba(59,130,246,0.3)';
+  status.style.color = 'var(--blue)';
+  status.textContent = 'Generating Medicare-compliant care plan... This may take 10-15 seconds.';
+
+  const prompt = buildCarePlanPrompt(p);
+
+  try {
+    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + apiKey, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: {
+          temperature: 0.3,
+          maxOutputTokens: 4096
+        }
+      })
+    });
+
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.error?.message || 'API error: ' + response.status);
+    }
+
+    const result = await response.json();
+    const text = result.candidates && result.candidates[0] && result.candidates[0].content && result.candidates[0].content.parts && result.candidates[0].content.parts[0] && result.candidates[0].content.parts[0].text;
+
+    if (!text) throw new Error('No response from AI');
+
+    document.getElementById('carePlanText').value = text;
+    p.carePlan = text;
+    saveData();
+
+    status.style.background = 'var(--green-bg)';
+    status.style.border = '1px solid rgba(34,197,94,0.3)';
+    status.style.color = 'var(--green)';
+    status.textContent = '✅ Care plan generated and saved. Review and edit as needed.';
+  } catch (err) {
+    status.style.background = 'var(--red-bg)';
+    status.style.border = '1px solid rgba(239,68,68,0.3)';
+    status.style.color = 'var(--red)';
+    status.textContent = '❌ Error: ' + err.message;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '🤖 Generate with AI';
+  }
+}
+
+function buildCarePlanPrompt(patient) {
+  const icd10 = patient.icd10 || '';
+  const diagnoses = patient.diagnoses || '';
+  const program = patient.program || 'CCM';
+  const isComplex = patient.complex;
+
+  const month = getCurrentMonth();
+  const entries = data.timeEntries.filter(e => e.patientId === patient.id && e.month === month);
+  const totalMins = entries.reduce((s, e) => s + e.minutes, 0);
+  const activities = [...new Set(entries.flatMap(e => e.activities || []))];
+
+  return 'You are an expert clinical documentation specialist for Medicare Chronic Care Management (CCM) and Remote Patient Monitoring (RPM) programs. Generate a comprehensive, individualized care plan.\n\nPATIENT INFORMATION:\n- Name: ' + patient.name + '\n- DOB: ' + (patient.dob || 'Not provided') + '\n- Program: ' + program + (isComplex ? ' (Complex — 99487/99489)' : '') + '\n- Diagnoses: ' + (diagnoses || 'Not specified') + '\n- ICD-10 Codes: ' + (icd10 || 'Not specified') + '\n- Insurance: ' + (patient.insurance || 'Not specified') + '\n- Current Month Minutes: ' + totalMins.toFixed(1) + '\n- Recent Activities: ' + (activities.join(', ') || 'None logged yet') + '\n\nREQUIREMENTS — Follow CMS/Medicare CCM guidelines strictly:\n\n1. PROBLEM LIST: List each diagnosis with its ICD-10 code. For each:\n   - Current status and clinical goals\n   - Measurable, time-bound objectives (SMART goals)\n   - Specific interventions (medications, monitoring, education)\n   - Expected outcomes\n\n2. MEDICATION MANAGEMENT:\n   - Medication reconciliation notes\n   - Adherence monitoring plan\n   - Drug interaction considerations\n   - Refill coordination plan\n\n3. CARE COORDINATION:\n   - Specialist referrals and follow-up schedule\n   - Lab/diagnostic monitoring schedule\n   - Communication plan (patient, caregivers, providers)\n   - Transitions of care protocols\n\n4. PATIENT EDUCATION & SELF-MANAGEMENT:\n   - Disease-specific education topics\n   - Diet and nutrition guidance per diagnosis\n   - Exercise/activity recommendations\n   - Warning signs requiring immediate medical attention (red flags)\n   - Self-monitoring instructions\n\n5. PREVENTIVE CARE:\n   - Age-appropriate screenings due\n   - Vaccination status review\n   - Fall risk assessment (if applicable)\n   - Mental health screening\n\n' + (program === 'RPM' || program === 'Both' ? '6. RPM MONITORING PLAN:\n   - Devices to be used (BP cuff, glucose monitor, pulse ox, weight scale)\n   - Monitoring frequency and schedule\n   - Alert thresholds for each vital sign\n   - Escalation protocol for abnormal readings\n   - Patient device education plan\n\n' : '') + '7. EMERGENCY/URGENT CARE PLAN:\n   - When to call provider vs. go to ER\n   - Emergency contact information section\n   - Advance directive status\n\n8. FOLLOW-UP SCHEDULE:\n   - Next provider visit\n   - Monthly CCM check-in schedule\n   - Anticipated care plan review date\n\nFORMAT: Use clear headers, bullet points, and organized sections. Include specific ICD-10 codes next to each problem. Make it clinically thorough but readable. This must meet Medicare documentation requirements for ' + (isComplex ? 'complex ' : '') + 'CCM billing (CPT ' + (isComplex ? '99487/99489' : '99490/99491') + ').\n\nDo NOT include placeholder text like "[insert here]" — generate realistic, clinically appropriate content based on the diagnoses and ICD-10 codes provided. If ICD-10 codes are not specified but diagnoses are, infer the most appropriate codes.';
 }
 
 // ==================== INIT ====================
