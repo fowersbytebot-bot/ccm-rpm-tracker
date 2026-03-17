@@ -725,7 +725,7 @@ tr { cursor: pointer; transition: background var(--transition); }
   <!-- Header -->
   <header>
     <div class="header-left">
-      <h1>CareFlow <span>Pro</span></h1>
+      <h1>CareFlow Pro <span id="headerProviderName"></span></h1>
       <nav id="mainNav">
         <button class="active" data-view="dashboard">Dashboard</button>
         <button data-view="patients">Patients</button>
@@ -909,6 +909,11 @@ tr { cursor: pointer; transition: background var(--transition); }
             <button class="btn btn-primary btn-sm" onclick="addLocation()">Add</button>
           </div>
         </div>
+      </div>
+      <div class="card" style="margin-top:16px;">
+        <div class="card-header"><h2>Practice Name</h2></div>
+        <p style="font-size:13px;color:var(--text-secondary);margin-bottom:8px;">Shown in the header bar</p>
+        <input type="text" id="practiceName" placeholder="e.g., Home Medical Services" value="" onchange="localStorage.setItem('ccm_practice_name',this.value);updateHeaderProvider('')">
       </div>
       <div class="card" style="margin-top:16px;">
         <div class="card-header"><h2>AI Care Plans</h2></div>
@@ -2239,6 +2244,8 @@ function renderSettings() {
   ).join('');
 
   loadGeminiKey();
+  const pnEl = document.getElementById('practiceName');
+  if (pnEl) pnEl.value = localStorage.getItem('ccm_practice_name') || '';
 }
 
 function addProvider() {
@@ -2802,11 +2809,17 @@ function buildCarePlanPrompt(patient) {
   return 'You are an expert clinical documentation specialist for Medicare Chronic Care Management (CCM). Generate a professional, individualized CCM care plan formatted exactly as Medicare expects for audits and billing compliance.\n\nPATIENT INFORMATION:\nPatient Name: ' + patient.name + '\nDate of Birth: ' + (patient.dob || 'Not provided') + '\nDate of Care Plan: ' + new Date().toLocaleDateString('en-US', {month:'long',day:'numeric',year:'numeric'}) + '\nProgram: ' + program + (isComplex ? ' (Complex CCM — CPT 99487/99489)' : ' (CCM — CPT 99490/99491)') + '\nDiagnoses: ' + (diagnoses || 'Not specified') + '\nICD-10 Codes: ' + (icd10 || 'Not specified') + '\nInsurance: ' + (patient.insurance || 'Not specified') + '\nCare Plan Review Period: ' + new Date().toLocaleDateString('en-US',{month:'short',year:'numeric'}) + ' - ' + new Date(Date.now()+90*86400000).toLocaleDateString('en-US',{month:'short',year:'numeric'}) + ccmNote + '\n\nGENERATE THE CARE PLAN WITH THESE EXACT SECTIONS:\n\n1. COMPREHENSIVE PROBLEM LIST\nFor each ICD-10 diagnosis, include:\n   - ICD-10 Code and Description\n   - Current Status (stable, worsening, improving)\n   - Clinical Goals (specific, measurable, time-bound)\n   - Interventions (medications, monitoring frequency, lifestyle modifications)\n   - Expected Outcomes\n\n2. MEDICATION MANAGEMENT\n   - Current medication reconciliation plan\n   - Adherence monitoring strategy\n   - Drug interaction screening notes\n   - Refill coordination with pharmacy\n\n3. CARE COORDINATION\n   - Primary care provider follow-up schedule\n   - Specialist referrals and coordination\n   - Lab and diagnostic test schedule\n   - Communication plan (patient, family, care team)\n\n4. PATIENT/CAREGIVER EDUCATION\n   - Disease-specific education topics\n   - Dietary guidance specific to diagnoses\n   - Physical activity recommendations\n   - Warning signs and red flags requiring immediate attention\n   - Self-management goals\n\n5. PREVENTIVE CARE\n   - Screenings due based on age and diagnoses\n   - Immunization review\n   - Fall risk assessment\n   - Depression/mental health screening\n\n6. EMERGENCY AND URGENT CARE PLAN\n   - When to contact provider\n   - When to go to emergency department\n   - Advance directive status\n\n7. CARE PLAN REVIEW\n   - Next scheduled review date\n   - Monthly CCM contact schedule\n   - Criteria for care plan modification\n\nFORMATTING RULES:\n- Use plain text with clear section headers (ALL CAPS for main sections)\n- Use dashes (-) for bullet points, NOT asterisks\n- Do NOT use markdown formatting (no **, no ##, no *)\n- Write in professional clinical language appropriate for Medicare documentation\n- Include the specific ICD-10 code in parentheses after each diagnosis name\n- Be thorough but concise — this goes in the patient chart\n- Do NOT include placeholder text like [insert here] — generate realistic clinical content\n- This must meet Medicare documentation requirements for ' + (isComplex ? 'complex ' : '') + 'CCM billing\n- If ICD-10 codes are not provided but diagnoses are listed, infer the correct codes';
 }
 
+function updateHeaderProvider(providerName) {
+  const el = document.getElementById('headerProviderName');
+  if (el) el.textContent = providerName || localStorage.getItem('ccm_practice_name') || '';
+}
+
 // ==================== INIT ====================
 function init() {
   initMonthSelector();
   initMobileMonthSelector();
   seedDemoData();
+  updateHeaderProvider('');
   refreshProviderSelectors();
   renderDashboard();
 
@@ -2814,12 +2827,14 @@ function init() {
   document.getElementById('activeProvider').addEventListener('change', function() {
     const val = this.value;
     document.getElementById('mobileProvider').value = val;
+    updateHeaderProvider(val);
     renderCurrentView();
   });
 
   // Mobile provider sync
   document.getElementById('mobileProvider').addEventListener('change', function() {
     document.getElementById('activeProvider').value = this.value;
+    updateHeaderProvider(this.value);
     renderCurrentView();
   });
 
