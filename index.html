@@ -1002,15 +1002,84 @@ const RPM_ACTIVITIES = [
 ];
 
 const BILLING_CODES = {
-  '99490': { label: 'CCM First 20 min (non-complex)', rate: 42, minMinutes: 20, type: 'CCM' },
-  '99439': { label: 'CCM Each addl 20 min', rate: 37, minMinutes: 20, type: 'CCM' },
-  '99491': { label: 'CCM First 30 min (complex)', rate: 74, minMinutes: 30, type: 'CCM' },
-  '99487': { label: 'CCM Each addl 30 min', rate: 67, minMinutes: 30, type: 'CCM' },
-  '99457': { label: 'RPM First 20 min interactive', rate: 51, minMinutes: 20, type: 'RPM' },
-  '99458': { label: 'RPM Each addl 20 min', rate: 42, minMinutes: 20, type: 'RPM' },
-  '99453': { label: 'RPM Device setup', rate: 19, minMinutes: 0, type: 'RPM' },
-  '99454': { label: 'RPM Device supply (16+ days)', rate: 55, minMinutes: 0, type: 'RPM' },
+  // CCM — Clinical Staff (non-complex: 2+ chronic conditions, 20 min/mo)
+  '99490': { label: 'CCM Clinical Staff First 20 min', rate: 62.69, minMinutes: 20, type: 'CCM', who: 'staff', complex: false },
+  '99439': { label: 'CCM Clinical Staff Each Addl 20 min', rate: 47.28, minMinutes: 40, type: 'CCM', who: 'staff', complex: false },
+  // CCM — Provider/Physician (non-complex)
+  '99491': { label: 'CCM Provider First 30 min', rate: 87.22, minMinutes: 30, type: 'CCM', who: 'provider', complex: false },
+  // CCM — Complex (3+ chronic conditions at significant risk)
+  '99487': { label: 'CCM Complex Clinical Staff First 60 min', rate: 94.18, minMinutes: 60, type: 'CCM', who: 'staff', complex: true },
+  '99489': { label: 'CCM Complex Clinical Staff Each Addl 30 min', rate: 46.68, minMinutes: 90, type: 'CCM', who: 'staff', complex: true },
+  // RPM
+  '99457': { label: 'RPM Clinical Staff First 20 min', rate: 51.00, minMinutes: 20, type: 'RPM', who: 'staff' },
+  '99458': { label: 'RPM Clinical Staff Each Addl 20 min', rate: 42.00, minMinutes: 40, type: 'RPM', who: 'staff' },
+  '99453': { label: 'RPM Device Setup & Education', rate: 19.00, minMinutes: 0, type: 'RPM', who: 'staff' },
+  '99454': { label: 'RPM Device Supply (16+ days/mo)', rate: 55.00, minMinutes: 0, type: 'RPM', who: 'staff' },
+  '99473': { label: 'RPM Provider Services', rate: 11.00, minMinutes: 0, type: 'RPM', who: 'provider' },
 };
+
+// Recommend billable codes based on logged minutes
+function getBillingRecommendation(patient, month) {
+  const totalMins = getPatientMinutes(patient.id, month);
+  const isComplex = patient.complex;
+  const program = patient.program;
+  const codes = [];
+  const tips = [];
+
+  if (program === 'CCM' || program === 'Both') {
+    if (isComplex) {
+      // Complex CCM: 99487 at 60 min, 99489 each addl 30
+      if (totalMins >= 60) {
+        codes.push({ code: '99487', desc: 'Complex CCM First 60 min (clinical staff)', rate: 94.18 });
+        if (totalMins >= 90) {
+          const addl = Math.floor((totalMins - 60) / 30);
+          for (let i = 0; i < addl; i++) codes.push({ code: '99489', desc: 'Complex CCM Addl 30 min', rate: 46.68 });
+        }
+        if (totalMins < 90) tips.push('Need ' + (90 - totalMins).toFixed(0) + ' more min for additional 99489 ($46.68)');
+      } else {
+        tips.push('Need ' + (60 - totalMins).toFixed(0) + ' more min for 99487 Complex CCM ($94.18)');
+        // Can still bill non-complex if 20+ min
+        if (totalMins >= 20) {
+          codes.push({ code: '99490', desc: 'CCM First 20 min (clinical staff)', rate: 62.69 });
+          tips.unshift('Billing non-complex 99490 — not enough time for complex 99487 yet');
+        }
+      }
+    } else {
+      // Non-complex CCM: 99490 at 20 min, 99439 each addl 20
+      if (totalMins >= 20) {
+        codes.push({ code: '99490', desc: 'CCM First 20 min (clinical staff)', rate: 62.69 });
+        if (totalMins >= 40) {
+          const addl = Math.floor((totalMins - 20) / 20);
+          for (let i = 0; i < addl; i++) codes.push({ code: '99439', desc: 'CCM Addl 20 min (clinical staff)', rate: 47.28 });
+        }
+        if (totalMins < 40) tips.push('Need ' + (40 - totalMins).toFixed(0) + ' more min for additional 99439 ($47.28)');
+      } else {
+        tips.push('Need ' + (20 - totalMins).toFixed(0) + ' more min for 99490 CCM ($62.69)');
+      }
+      // Provider billing: 99491 if provider personally spent 30+ min non-F2F
+      if (totalMins >= 30) {
+        tips.push('💡 If the billing PROVIDER (NP/MD) personally spent 30+ min non-F2F this month, bill 99491 ($87.22) INSTEAD of 99490. Cannot bill both.');
+      }
+    }
+  }
+
+  if (program === 'RPM' || program === 'Both') {
+    const rpmMins = program === 'Both' ? getPatientMinutesByProgram(patient.id, month, 'RPM') : totalMins;
+    if (rpmMins >= 20) {
+      codes.push({ code: '99457', desc: 'RPM First 20 min interactive', rate: 51.00 });
+      if (rpmMins >= 40) {
+        codes.push({ code: '99458', desc: 'RPM Addl 20 min', rate: 42.00 });
+      } else {
+        tips.push('Need ' + (40 - rpmMins).toFixed(0) + ' more RPM min for 99458 ($42)');
+      }
+    } else if (program === 'RPM' || (program === 'Both' && rpmMins > 0)) {
+      tips.push('Need ' + (20 - rpmMins).toFixed(0) + ' more RPM min for 99457 ($51)');
+    }
+  }
+
+  const totalRevenue = codes.reduce((s, c) => s + c.rate, 0);
+  return { codes, tips, totalRevenue };
+}
 
 
 function getDefaultData() {
@@ -1294,9 +1363,9 @@ function renderDashboard() {
   // Revenue
   const revData = calculateRevenue(patients, month);
   document.getElementById('revenueBreakdown').innerHTML = revData.breakdown.map(r =>
-    `<div class="revenue-row"><span class="code">${r.code} — ${r.label}</span><span class="count">${r.count} pts</span><span class="amount">$${r.amount.toLocaleString()}</span></div>`
-  ).join('');
-  document.getElementById('totalRevenue').textContent = '$' + revData.total.toLocaleString();
+    `<div class="revenue-row"><span class="code">${r.code} — ${r.label}</span><span class="count">${r.count} pts</span><span class="amount">$${Math.round(r.amount).toLocaleString()}</span></div>`
+  ).join('') + (revData.ccmProviderEligible > 0 ? `<div style="margin-top:8px;padding:8px;background:var(--blue-bg);border-radius:var(--radius);font-size:11px;color:var(--blue);">💡 *99491: ${revData.ccmProviderEligible} patients eligible if PROVIDER (NP/MD) personally logged 30+ non-F2F min. Bills INSTEAD of 99490 (not in addition). Provider total: $${Math.round(revData.providerTotal).toLocaleString()}</div>` : '');
+  document.getElementById('totalRevenue').textContent = '$' + Math.round(revData.total).toLocaleString();
 
   // Quick stats
   document.getElementById('quickStats').innerHTML = `
@@ -1313,8 +1382,8 @@ function calculateRevenue(patients, month) {
   const breakdown = [];
   let total = 0;
 
-  // CCM 99490 - first 20 min non-complex
-  let ccmBasic = 0, ccmAddl = 0, ccmComplex = 0, ccmComplexAddl = 0;
+  let ccmBasic = 0, ccmAddl = 0, ccmProvider = 0;
+  let ccmComplex = 0, ccmComplexAddl = 0;
   let rpmBasic = 0, rpmAddl = 0;
 
   patients.forEach(p => {
@@ -1322,12 +1391,12 @@ function calculateRevenue(patients, month) {
     if (p.program === 'CCM' || p.program === 'Both') {
       const ccmMins = p.program === 'Both' ? getPatientMinutesByProgram(p.id, month, 'CCM') || mins * 0.6 : mins;
       if (p.complex) {
-        if (ccmMins >= 30) { ccmComplex++; }
-        if (ccmMins >= 60) { ccmComplexAddl++; }
+        if (ccmMins >= 60) { ccmComplex++; }
+        if (ccmMins >= 90) { const addl = Math.floor((ccmMins - 60) / 30); ccmComplexAddl += addl; }
       } else {
         if (ccmMins >= 20) { ccmBasic++; }
-        if (ccmMins >= 40) { ccmAddl++; }
-        if (ccmMins >= 60) { ccmAddl++; }
+        if (ccmMins >= 40) { const addl = Math.floor((ccmMins - 20) / 20); ccmAddl += addl; }
+        if (ccmMins >= 30) { ccmProvider++; } // Eligible for 99491 if provider time
       }
     }
     if (p.program === 'RPM' || p.program === 'Both') {
@@ -1337,15 +1406,19 @@ function calculateRevenue(patients, month) {
     }
   });
 
-  breakdown.push({ code: '99490', label: 'CCM 20 min', count: ccmBasic, amount: ccmBasic * 42 });
-  breakdown.push({ code: '99439', label: 'CCM addl 20', count: ccmAddl, amount: ccmAddl * 37 });
-  breakdown.push({ code: '99491', label: 'CCM complex 30', count: ccmComplex, amount: ccmComplex * 74 });
-  breakdown.push({ code: '99487', label: 'CCM complex addl', count: ccmComplexAddl, amount: ccmComplexAddl * 67 });
-  breakdown.push({ code: '99457', label: 'RPM 20 min', count: rpmBasic, amount: rpmBasic * 51 });
-  breakdown.push({ code: '99458', label: 'RPM addl 20', count: rpmAddl, amount: rpmAddl * 42 });
+  breakdown.push({ code: '99490', label: 'CCM Staff First 20 min', count: ccmBasic, amount: ccmBasic * 62.69 });
+  breakdown.push({ code: '99439', label: 'CCM Staff Addl 20 min', count: ccmAddl, amount: ccmAddl * 47.28 });
+  breakdown.push({ code: '99491', label: 'CCM Provider 30 min*', count: ccmProvider, amount: ccmProvider * 87.22 });
+  breakdown.push({ code: '99487', label: 'CCM Complex 60 min', count: ccmComplex, amount: ccmComplex * 94.18 });
+  breakdown.push({ code: '99489', label: 'CCM Complex Addl 30', count: ccmComplexAddl, amount: ccmComplexAddl * 46.68 });
+  breakdown.push({ code: '99457', label: 'RPM First 20 min', count: rpmBasic, amount: rpmBasic * 51.00 });
+  breakdown.push({ code: '99458', label: 'RPM Addl 20 min', count: rpmAddl, amount: rpmAddl * 42.00 });
 
-  total = breakdown.reduce((s, r) => s + r.amount, 0);
-  return { breakdown, total };
+  // Note: 99490 and 99491 can't be billed together — show conservative (staff) + provider potential
+  total = breakdown.filter(r => r.code !== '99491').reduce((s, r) => s + r.amount, 0);
+  const providerTotal = total - (ccmBasic * 62.69) + (ccmProvider * 87.22);
+
+  return { breakdown: breakdown.filter(r => r.count > 0), total, providerTotal, ccmProviderEligible: ccmProvider };
 }
 
 // ==================== PATIENT LIST ====================
@@ -1575,6 +1648,27 @@ function renderPatientChart(patientId) {
           </div>
         </div>
       </div>
+      ${(() => {
+        const rec = getBillingRecommendation(p, month);
+        return '<div class="card" style="margin-top:12px;">' +
+          '<div class="card-header"><h3>💰 Billing Recommendation</h3></div>' +
+          '<div style="font-size:13px;">' +
+          (rec.codes.length > 0 ?
+            rec.codes.map(c =>
+              '<div style="display:flex;justify-content:space-between;padding:8px 12px;background:var(--green-bg);border:1px solid rgba(34,197,94,0.2);border-radius:var(--radius);margin-bottom:6px;">' +
+              '<div><strong style="color:var(--green);margin-right:8px;">' + c.code + '</strong><span>' + escapeHtml(c.desc) + '</span></div>' +
+              '<span style="font-weight:700;color:var(--green);">$' + c.rate.toFixed(2) + '</span></div>'
+            ).join('') +
+            '<div style="margin-top:8px;padding:8px 12px;background:var(--bg-tertiary);border-radius:var(--radius);font-weight:600;">Estimated Total: <span style="color:var(--green);font-size:16px;">$' + rec.totalRevenue.toFixed(2) + '</span></div>'
+          : '<div style="padding:12px;color:var(--text-muted);">No billable codes yet — log more time.</div>') +
+          (rec.tips.length > 0 ?
+            '<div style="margin-top:10px;">' +
+            rec.tips.map(t =>
+              '<div style="padding:6px 10px;margin-bottom:4px;font-size:12px;color:var(--yellow);background:var(--yellow-bg);border-radius:var(--radius);">' + escapeHtml(t) + '</div>'
+            ).join('') + '</div>'
+          : '') +
+          '</div></div>';
+      })()}
     `;
   } else if (chartTab === 'timelog') {
     tabContent.innerHTML = `
